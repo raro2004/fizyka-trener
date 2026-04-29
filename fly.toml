@@ -1,0 +1,31 @@
+# fly.toml — konfiguracja Fly.io dla Trenera Fizyki
+# UWAGA: nazwę aplikacji zmień podczas pierwszego deploya: `fly launch` zaproponuje nową
+app = "fizyka-trener"
+primary_region = "waw"  # Warszawa - najbliżej Polski
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"      # zatrzymuje gdy nikt nie używa (oszczędza darmowe godziny)
+  auto_start_machines = true       # uruchamia automatycznie przy pierwszym requeście
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
