@@ -61,6 +61,7 @@ function ensureUser(login, password, role) {
   }
 }
 ensureUser(process.env.STUDENT_LOGIN || "kuba", process.env.STUDENT_PASSWORD || "fizyka", "student");
+ensureUser(process.env.STUDENT2_LOGIN || "dominika", process.env.STUDENT2_PASSWORD || "dominikafizyka", "student");
 ensureUser(process.env.ADMIN_LOGIN || "rafal", process.env.ADMIN_PASSWORD || "admin2026", "admin");
 
 // === Session store (SQLite) ===

@@ -182,9 +182,74 @@ footer .goal { width: 100%; text-align: center; color: var(--muted); font-size: 
 .hint-note { font-size: 13px; opacity: .85; font-style: italic; }
 .reset-note { font-size: 13px; opacity: .85; }
 
-/* Mobile */
+/* === Tablet (do 900px) === */
+@media (max-width: 900px) {
+  #app { padding: 16px 14px 40px; }
+  .cards { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card { padding: 18px; }
+  .session-info { flex: 1 1 100%; }
+}
+
+/* === Mobile (do 640px) === */
 @media (max-width: 640px) {
-  header h1 { font-size: 22px; }
-  .task-card { padding: 18px; }
-  .task-prompt { font-size: 15px; }
+  #app { padding: 12px 12px 32px; }
+  header h1 { font-size: 20px; line-height: 1.3; }
+  header .hello { font-size: 14px; }
+
+  /* Jedna kolumna kart */
+  .cards { grid-template-columns: 1fr; gap: 12px; }
+  .card { padding: 16px; border-radius: 12px; }
+  .cat-icon { font-size: 32px; }
+  .card h3 { font-size: 18px; }
+
+  /* Sesja ćwiczeń */
+  .session-header { flex-direction: column; align-items: stretch; gap: 8px; }
+  .session-info { gap: 6px; font-size: 12px; }
+  .badge { font-size: 12px; padding: 4px 10px; }
+  .session-info .streak, .session-info .progress { font-size: 12px; }
+
+  .task-card { padding: 14px; border-radius: 12px; }
+  .task-prompt { font-size: 15px; line-height: 1.5; }
+  .task-source { font-size: 11px; }
+
+  /* Schemat obwodu — pełna szerokość, scroll horyzontalny gdy za szeroki */
+  .circuit { margin: 8px -4px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .circuit-svg { max-width: 100%; height: auto; min-width: 280px; }
+
+  /* Pola odpowiedzi — pełna szerokość, większe palce-friendly */
+  .answers { padding: 12px; gap: 8px; }
+  .answer-row label {
+    flex-wrap: wrap;
+    font-size: 15px;
+  }
+  .answer-row input {
+    flex: 1 1 100%;
+    min-width: 0;
+    padding: 12px;
+    font-size: 17px; /* > 16px żeby iOS nie zoomował przy focusie */
+  }
+  .answer-row .unit { flex: 0 0 auto; }
+
+  /* Przyciski na mobile pełna szerokość */
+  .task-actions { flex-direction: column; gap: 8px; }
+  .task-actions .btn { width: 100%; padding: 12px; font-size: 16px; }
+  .next-btn { width: 100%; }
+
+  /* Feedback */
+  .feedback { padding: 14px; }
+  .feedback h3 { font-size: 16px; }
+  .solution-steps, .hint-steps { padding: 12px 12px 12px 28px; }
+  .solution-steps li, .hint-steps li { font-size: 14px; }
+
+  /* Footer */
+  footer { flex-direction: column; gap: 8px; }
+  footer .btn { width: 100%; }
+}
+
+/* === Bardzo małe ekrany (do 380px) === */
+@media (max-width: 380px) {
+  header h1 { font-size: 18px; }
+  .task-card { padding: 12px; }
+  .task-prompt { font-size: 14px; }
+  .answer-row label { font-size: 14px; }
 }

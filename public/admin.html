@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel admina — Trener Fizyki</title>
-  <link rel="stylesheet" href="css/style.css?v=3" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
   <style>
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
     .admin-header h1 { margin: 0; font-size: 22px; }
@@ -28,6 +28,38 @@
     .bar { flex: 1; min-width: 14px; background: var(--primary); border-radius: 4px 4px 0 0; position: relative; }
     .bar-day { font-size: 10px; color: var(--muted); text-align: center; transform: rotate(-45deg); transform-origin: top left; margin-top: 4px; padding-left: 8px; }
     .bar-val { font-size: 11px; color: #fff; position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-weight: 600; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-wrap table.adm { min-width: 360px; }
+
+    /* Tablet */
+    @media (max-width: 900px) {
+      #app { padding: 16px 14px 40px; }
+      .stat-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      section.block { padding: 14px 16px; }
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      #app { padding: 12px 12px 32px; }
+      .admin-header { flex-direction: column; align-items: stretch; gap: 10px; }
+      .admin-header h1 { font-size: 18px; text-align: center; }
+      .admin-header > div { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .stat-grid { grid-template-columns: 1fr; gap: 10px; }
+      .stat-tile { padding: 14px; }
+      .stat-tile .value { font-size: 22px; }
+      section.block { padding: 14px; margin-bottom: 14px; border-radius: 10px; }
+      section.block h2 { font-size: 15px; }
+      table.adm th, table.adm td { padding: 6px 8px; font-size: 13px; }
+      .pill { font-size: 10px; padding: 2px 6px; }
+      .bar-chart { height: 90px; gap: 4px; }
+      .bar-val { font-size: 10px; }
+    }
+
+    @media (max-width: 380px) {
+      .admin-header h1 { font-size: 16px; }
+      .stat-tile .value { font-size: 20px; }
+      .stat-tile .label { font-size: 11px; }
+    }
   </style>
 </head>
 <body>
@@ -39,6 +71,7 @@
         <button id="logoutBtn" class="btn ghost">Wyloguj</button>
       </div>
     </div>
+    <div id="studentTabs" style="display:none;margin-bottom:16px"></div>
     <p style="text-align:center;color:#666;padding:24px" id="loading">Ładowanie statystyk…</p>
     <div id="content" style="display:none"></div>
   </div>
@@ -80,13 +113,38 @@
         $("loading").textContent = "Brak studentów do podglądu.";
         return;
       }
-      // Załaduj stats dla pierwszego studenta (Kuby)
-      const studentId = users[0].id;
-      const studentLogin = users[0].login;
+      window.__students = users;
+      // Renderuj zakładki gdy >1 student
+      if (users.length > 1) {
+        $("studentTabs").style.display = "flex";
+        $("studentTabs").style.gap = "8px";
+        $("studentTabs").style.flexWrap = "wrap";
+        $("studentTabs").innerHTML = users.map((u, i) => `
+          <button class="btn ${i === 0 ? "primary" : "ghost"} student-tab" data-id="${u.id}" data-login="${u.login}">
+            👤 ${u.login}
+          </button>
+        `).join("");
+        document.querySelectorAll(".student-tab").forEach(btn => {
+          btn.addEventListener("click", () => loadStudent(parseInt(btn.dataset.id), btn.dataset.login));
+        });
+      }
+      // Załaduj pierwszego
+      loadStudent(users[0].id, users[0].login);
+    })();
+
+    async function loadStudent(studentId, studentLogin) {
+      $("loading").style.display = "block";
+      $("loading").textContent = "Ładowanie statystyk dla " + studentLogin + "…";
+      $("content").style.display = "none";
+      // Aktywna zakładka
+      document.querySelectorAll(".student-tab").forEach(b => {
+        b.classList.toggle("primary", parseInt(b.dataset.id) === studentId);
+        b.classList.toggle("ghost", parseInt(b.dataset.id) !== studentId);
+      });
       const statsRes = await fetch("/api/admin/stats/" + studentId);
       const s = await statsRes.json();
       renderStats(s, studentLogin);
-    })();
+    }
 
     function renderStats(s, login) {
       $("loading").style.display = "none";
@@ -185,37 +243,43 @@
 
         <section class="block">
           <h2>🎯 Wyniki według kategorii</h2>
-          <table class="adm">
-            <tr><th>Kategoria</th><th>Prób</th><th>Poprawnych</th><th>Błędów</th><th>Skuteczność</th></tr>
-            ${totalsRows}
-          </table>
+          <div class="table-wrap">
+            <table class="adm">
+              <tr><th>Kategoria</th><th>Prób</th><th>Poprawnych</th><th>Błędów</th><th>%</th></tr>
+              ${totalsRows}
+            </table>
+          </div>
         </section>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
           <section class="block">
             <h2>🕒 Sesje nauki (ostatnie 20)</h2>
-            <table class="adm">
-              <tr><th>Początek</th><th>Czas trwania</th></tr>
-              ${sessionsRows}
-            </table>
+            <div class="table-wrap">
+              <table class="adm">
+                <tr><th>Początek</th><th>Czas</th></tr>
+                ${sessionsRows}
+              </table>
+            </div>
           </section>
 
           <section class="block">
             <h2>❗ Najczęściej mylone zadania</h2>
-            <table class="adm">
-              <tr><th>Kategoria</th><th>ID zadania</th><th>Razy źle</th></tr>
-              ${missedRows}
-            </table>
+            <div class="table-wrap">
+              <table class="adm">
+                <tr><th>Kategoria</th><th>ID</th><th>Razy źle</th></tr>
+                ${missedRows}
+              </table>
+            </div>
           </section>
         </div>
 
         <section class="block">
           <h2>📜 Ostatnie 25 prób</h2>
-          <div style="overflow-x:auto">
-          <table class="adm">
-            <tr><th>Kiedy</th><th>Kategoria</th><th>Zadanie</th><th>Wynik</th></tr>
-            ${recentRows}
-          </table>
+          <div class="table-wrap">
+            <table class="adm">
+              <tr><th>Kiedy</th><th>Kategoria</th><th>Zadanie</th><th>Wynik</th></tr>
+              ${recentRows}
+            </table>
           </div>
         </section>
       `;
