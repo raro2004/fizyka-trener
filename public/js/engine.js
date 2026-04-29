@@ -95,9 +95,9 @@
       const sumVal = subs.reduce((a, b) => a + b.result, 0);
       const label = `(${sumExpr})`;
       const steps = subs.flatMap(s => s.steps);
-      const valuesExpr = subs.map(s => fmt(s.result)).join(" + ");
-      steps.push(`Łączenie szeregowe: R = ${sumExpr} = ${valuesExpr} = ${fmt(sumVal)} Ω`);
-      return { steps, result: sumVal, label: fmt(sumVal) + " Ω" };
+      const valuesExpr = subs.map(s => fmtFrac(s.result)).join(" + ");
+      steps.push(`Szeregowo (oporniki dodajemy): R = ${sumExpr} = ${valuesExpr} = ${fmtFrac(sumVal)} Ω`);
+      return { steps, result: sumVal, label: fmtFrac(sumVal) + " Ω" };
     }
     if (net.type === "p") {
       const subs = net.children.map(c => explainRz(c, indent + 1));
@@ -105,27 +105,32 @@
       const recVal = subs.reduce((a, b) => a + 1 / b.result, 0);
       const result = 1 / recVal;
       const steps = subs.flatMap(s => s.steps);
-      const valuesExpr = subs.map(s => `1/${fmt(s.result)}`).join(" + ");
-      steps.push(`Łączenie równoległe: 1/R = ${recExpr} = ${valuesExpr} = ${fmt(recVal)}; R = ${fmt(result)} Ω`);
-      return { steps, result, label: fmt(result) + " Ω" };
+      const valuesExpr = subs.map(s => `1/${fmtFrac(s.result)}`).join(" + ");
+      steps.push(`Równolegle (sumujemy odwrotności): 1/R = ${recExpr} = ${valuesExpr} = ${fmtFrac(recVal)}, więc R = ${fmtFrac(result)} Ω`);
+      return { steps, result, label: fmtFrac(result) + " Ω" };
     }
   }
 
-  // Wygeneruj kroki dla układu mieszanego (zadanie typu 3)
+  // Wygeneruj kroki dla układu mieszanego (zadanie typu 3) — łopatologicznie
   function explainMixed(net, U) {
     const lines = [];
-    lines.push(`Dane: U = ${fmt(U)} V, oporniki: ${describeNet(net)}`);
+    lines.push(`📋 DANE: napięcie U = ${fmt(U)} V; oporniki: ${describeNet(net)}`);
+    lines.push(`🎯 SZUKANE: opór zastępczy R_z, prąd całkowity I oraz U i I na każdym oporniku.`);
+    lines.push(`📐 KROK 1 — liczymy R_z (opór zastępczy całego układu):`);
     const exp = explainRz(net);
-    exp.steps.forEach(s => lines.push("• " + s));
+    exp.steps.forEach(s => lines.push("   • " + s));
     const Rtotal = exp.result;
-    lines.push(`Opór zastępczy całego układu: R_z = ${fmt(Rtotal)} Ω`);
+    lines.push(`   ⇒ R_z = ${fmtFrac(Rtotal)} Ω`);
     const Itotal = U / Rtotal;
-    lines.push(`Prąd całkowity z prawa Ohma: I = U / R_z = ${fmt(U)} / ${fmt(Rtotal)} = ${fmt(Itotal)} A`);
+    lines.push(`📐 KROK 2 — prąd całkowity z prawa Ohma. Wzór: I = U / R_z`);
+    lines.push(`   Podstawiamy: I = ${fmt(U)} V / ${fmtFrac(Rtotal)} Ω = ${fmtFrac(Itotal)} A`);
+    lines.push(`📐 KROK 3 — U i I na każdym oporniku:`);
+    lines.push(`   Reguła: w gałęzi szeregowej wszędzie ten sam prąd (I=I₁=I₂=…); w gałęzi równoległej wszędzie to samo napięcie (U=U₁=U₂=…).`);
     const sol = solve(net, U);
     const leaves = flattenSolution(sol);
     leaves.sort((a, b) => (a.id || 0) - (b.id || 0));
     leaves.forEach(l => {
-      lines.push(`R${l.id} = ${fmt(l.R)} Ω → U${l.id} = I·R = ${fmt(l.U)} V, I${l.id} = U/R = ${fmt(l.I)} A`);
+      lines.push(`   R${l.id} = ${fmtFrac(l.R)} Ω: U${l.id} = I·R = ${fmtFrac(l.I)}·${fmtFrac(l.R)} = ${fmtFrac(l.U)} V, I${l.id} = U/R = ${fmtFrac(l.U)}/${fmtFrac(l.R)} = ${fmtFrac(l.I)} A`);
     });
     return lines;
   }
@@ -162,12 +167,50 @@
     return walk(net);
   }
 
-  // Formatowanie liczb (przyjazne, bez nadmiernych zer)
+  // Konwersja na ułamek prosty (jeśli ma sens, mianownik ≤ 50)
+  function toFraction(x, maxDen) {
+    maxDen = maxDen || 50;
+    if (typeof x !== "number" || isNaN(x) || !isFinite(x)) return null;
+    if (Number.isInteger(x)) return { num: x, den: 1 };
+    const sign = Math.sign(x);
+    const abs = Math.abs(x);
+    for (let d = 2; d <= maxDen; d++) {
+      const n = abs * d;
+      if (Math.abs(n - Math.round(n)) < 1e-7) {
+        let num = Math.round(n);
+        // skróć ułamek
+        const g = gcd(num, d);
+        return { num: sign * (num / g), den: d / g };
+      }
+    }
+    return null;
+  }
+  function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+  // Formatowanie liczb dziesiętne (np. 1,09)
   function fmt(x) {
     if (x === undefined || x === null || Number.isNaN(x)) return "?";
     const r = Math.round(x * 1000) / 1000;
-    // Pokaż ułamek prosty jeśli wynik jest taki jak np. 12/11
     return Number.isInteger(r) ? String(r) : String(r).replace(".", ",");
+  }
+  // Formatowanie preferujące ułamek (np. 12/11)
+  function fmtFrac(x) {
+    const f = toFraction(x);
+    if (f && f.den !== 1) return `${f.num}/${f.den}`;
+    return fmt(x);
+  }
+  // Pokazuje oba: "12/11 ≈ 1,09" — tylko gdy ułamek nie jest oczywisty
+  function fmtBoth(x) {
+    const f = toFraction(x);
+    if (!f) return fmt(x);
+    if (f.den === 1) return fmt(x);  // liczba całkowita
+    // jeśli wynik ma "ładną" reprezentację dziesiętną (≤ 2 cyfry po przecinku)
+    const r = Math.round(x * 100) / 100;
+    if (Math.abs(r - x) < 1e-7 && f.den <= 4) {
+      // np. 1,5 = 3/2 — wystarczy pokazać dziesiętne
+      return fmt(x);
+    }
+    return `${f.num}/${f.den} ≈ ${fmt(x)}`;
   }
 
   // Czy dwie liczby są (prawie) równe
@@ -178,6 +221,6 @@
 
   global.CircuitEngine = {
     Rz, solve, flattenSolution, explainRz, explainMixed, describeNet,
-    assignIds, countLeaves, fmt, approxEq, normalize
+    assignIds, countLeaves, fmt, fmtFrac, fmtBoth, toFraction, approxEq, normalize
   };
 })(typeof window !== "undefined" ? window : globalThis);

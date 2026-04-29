@@ -167,9 +167,19 @@ footer .goal { width: 100%; text-align: center; color: var(--muted); font-size: 
   padding: 16px 16px 16px 36px;
   border-radius: 8px;
   margin-top: 8px;
-  line-height: 1.6;
+  line-height: 1.7;
 }
-.solution-steps li { margin-bottom: 6px; }
+.solution-steps li { margin-bottom: 8px; font-size: 15px; }
+.hint-steps {
+  background: #ffffff;
+  color: var(--text);
+  padding: 16px 16px 16px 36px;
+  border-radius: 8px;
+  margin: 8px 0;
+  line-height: 1.7;
+}
+.hint-steps li { margin-bottom: 8px; font-size: 15px; }
+.hint-note { font-size: 13px; opacity: .85; font-style: italic; }
 .reset-note { font-size: 13px; opacity: .85; }
 
 /* Mobile */

@@ -218,11 +218,11 @@
         </div>
       `;
     } else {
-      // pokaż które pola źle
+      // pokaż które pola źle (pokaż oba: ułamek + dziesiętne)
       const list = currentTask.fields.map((f, i) => {
         const u = userAnswers[i];
         const got = isNaN(u.value) ? "(brak)" : E.fmt(u.value);
-        const expected = E.fmt(f.value);
+        const expected = E.fmtBoth(f.value);
         return `<li>${f.label} = <span class="${u.ok ? "ok" : "bad"}">${got} ${f.unit}</span> ${u.ok ? "✓" : `(prawidłowo: <b>${expected} ${f.unit}</b>)`}</li>`;
       }).join("");
       const steps = currentTask.solution.map(s => `<li>${s}</li>`).join("");
@@ -231,7 +231,7 @@
           <h3>❌ Niestety błąd</h3>
           <ul class="answer-list">${list}</ul>
           <details open>
-            <summary><b>Rozwiązanie krok po kroku</b></summary>
+            <summary><b>📚 Rozwiązanie krok po kroku</b></summary>
             <ol class="solution-steps">${steps}</ol>
           </details>
           <p class="reset-note">Streak wyzerowany. Spróbuj ponownie z nowym zadaniem (to wróci później).</p>
@@ -245,8 +245,16 @@
 
   function showHint() {
     const fb = document.getElementById("feedback");
-    const formula = currentTask.solution[1] || currentTask.solution[0] || "Brak podpowiedzi.";
-    fb.innerHTML = `<div class="feedback hint">💡 ${formula}</div>`;
+    const lines = currentTask.hint && currentTask.hint.length
+      ? currentTask.hint
+      : (currentTask.solution.slice(0, 4) || ["Brak podpowiedzi"]);
+    const items = lines.map(l => `<li>${l}</li>`).join("");
+    fb.innerHTML = `
+      <div class="feedback hint">
+        <h3>💡 Podpowiedź — co za co podstawić</h3>
+        <ol class="hint-steps">${items}</ol>
+        <p class="hint-note">Podpowiedź pokazuje wzory i co przekształcić — ale liczby już sam wpisz!</p>
+      </div>`;
   }
 
   // === Start ===
