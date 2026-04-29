@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel admina — Trener Fizyki</title>
+  <link rel="stylesheet" href="css/style.css?v=3" />
+  <style>
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .admin-header h1 { margin: 0; font-size: 22px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-tile { background: var(--card); border: 1px solid var(--border); padding: 16px; border-radius: 12px; box-shadow: var(--shadow); }
+    .stat-tile .label { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+    .stat-tile .value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+    .stat-tile .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    section.block { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
+    section.block h2 { margin: 0 0 12px; font-size: 17px; }
+    table.adm { width: 100%; border-collapse: collapse; font-size: 14px; }
+    table.adm th, table.adm td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    table.adm th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; }
+    table.adm td.ok { color: var(--ok); }
+    table.adm td.bad { color: var(--bad); }
+    .pill { background: var(--primary); color: #fff; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .pill.green { background: var(--ok); }
+    .pill.red { background: var(--bad); }
+    .empty-note { color: var(--muted); font-style: italic; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; margin: 12px 0 6px; }
+    .bar { flex: 1; min-width: 14px; background: var(--primary); border-radius: 4px 4px 0 0; position: relative; }
+    .bar-day { font-size: 10px; color: var(--muted); text-align: center; transform: rotate(-45deg); transform-origin: top left; margin-top: 4px; padding-left: 8px; }
+    .bar-val { font-size: 11px; color: #fff; position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="admin-header">
+      <h1>📊 Panel Admina</h1>
+      <div>
+        <span id="adminBadge" class="badge"></span>
+        <button id="logoutBtn" class="btn ghost">Wyloguj</button>
+      </div>
+    </div>
+    <p style="text-align:center;color:#666;padding:24px" id="loading">Ładowanie statystyk…</p>
+    <div id="content" style="display:none"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const fmtTime = (ms) => {
+      if (!ms) return "0 min";
+      const m = Math.round(ms / 60000);
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      return h ? `${h} h ${mm} min` : `${mm} min`;
+    };
+    const fmtDate = (ts) => {
+      if (!ts) return "—";
+      const d = new Date(ts);
+      return d.toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "short" });
+    };
+    const fmtDay = (ts) => {
+      if (!ts) return "—";
+      return new Date(ts).toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+    };
+    const catLabel = (c) => ({basic:"Wzory",rz:"Opór zast.",mixed:"Mieszane"}[c] || c);
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" });
+      location.href = "/login.html";
+    });
+
+    (async function init() {
+      const meRes = await fetch("/api/me", { credentials: "same-origin" });
+      const me = (await meRes.json()).user;
+      if (!me || me.role !== "admin") { location.href = "/login.html"; return; }
+      $("adminBadge").textContent = "👤 " + me.login;
+
+      const usersRes = await fetch("/api/admin/users");
+      const { users } = await usersRes.json();
+      if (!users || users.length === 0) {
+        $("loading").textContent = "Brak studentów do podglądu.";
+        return;
+      }
+      // Załaduj stats dla pierwszego studenta (Kuby)
+      const studentId = users[0].id;
+      const studentLogin = users[0].login;
+      const statsRes = await fetch("/api/admin/stats/" + studentId);
+      const s = await statsRes.json();
+      renderStats(s, studentLogin);
+    })();
+
+    function renderStats(s, login) {
+      $("loading").style.display = "none";
+      $("content").style.display = "block";
+
+      const totalAttempts = s.totals.reduce((a, t) => a + t.total, 0);
+      const totalCorrect = s.totals.reduce((a, t) => a + t.correct, 0);
+      const accuracy = totalAttempts ? Math.round(100 * totalCorrect / totalAttempts) : 0;
+
+      const todayKey = new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD
+      const today = s.daily.find(d => d.day === todayKey);
+
+      const tiles = `
+        <div class="stat-tile">
+          <div class="label">Uczeń</div>
+          <div class="value">👤 ${login}</div>
+          <div class="sub">${s.firstAttempt ? "Pierwsza próba: " + fmtDate(s.firstAttempt) : "Jeszcze nie ćwiczył"}</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">Wszystkich prób</div>
+          <div class="value">${totalAttempts}</div>
+          <div class="sub">${totalCorrect} poprawnych (${accuracy}%)</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">Łączny czas</div>
+          <div class="value">${fmtTime(s.totalTimeMs)}</div>
+          <div class="sub">${s.sessionCount || 0} sesji nauki</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">Ostatnia aktywność</div>
+          <div class="value" style="font-size: 16px">${fmtDate(s.lastHeartbeat || s.lastAttempt)}</div>
+          <div class="sub">${today ? `dziś: ${today.attempts} prób` : "dziś: brak"}</div>
+        </div>
+      `;
+
+      const totalsRows = s.totals.length
+        ? s.totals.map(t => {
+            const acc = t.total ? Math.round(100*t.correct/t.total) : 0;
+            return `<tr>
+              <td><span class="pill">${catLabel(t.category)}</span></td>
+              <td>${t.total}</td>
+              <td class="ok">${t.correct}</td>
+              <td class="bad">${t.total - t.correct}</td>
+              <td>${acc}%</td>
+            </tr>`;
+          }).join("")
+        : `<tr><td colspan="5" class="empty-note">Brak danych — Kuba jeszcze nie próbował.</td></tr>`;
+
+      const dailyMax = Math.max(1, ...s.daily.map(d => d.attempts));
+      const dailySorted = s.daily.slice().reverse(); // oldest first
+      const barChart = dailySorted.length
+        ? `
+          <div class="bar-chart">
+            ${dailySorted.map(d => {
+              const h = (d.attempts / dailyMax) * 100;
+              return `<div class="bar" style="height:${h}%" title="${d.day}: ${d.attempts} prób (${d.correct} ✓)">
+                <span class="bar-val">${d.attempts}</span>
+              </div>`;
+            }).join("")}
+          </div>
+          <div style="display:flex;gap:8px;font-size:10px;color:var(--muted);">
+            ${dailySorted.map(d => `<div style="flex:1;text-align:center">${d.day.slice(5)}</div>`).join("")}
+          </div>
+        `
+        : `<p class="empty-note">Brak aktywności w ostatnich dniach.</p>`;
+
+      const sessionsRows = s.sessions.length
+        ? s.sessions.map(se => {
+            const dur = se.end - se.start;
+            return `<tr><td>${fmtDate(se.start)}</td><td>${fmtTime(dur)}</td></tr>`;
+          }).join("")
+        : `<tr><td colspan="2" class="empty-note">Brak sesji.</td></tr>`;
+
+      const missedRows = s.missed.length
+        ? s.missed.map(m => `<tr>
+            <td><span class="pill red">${catLabel(m.category)}</span></td>
+            <td><code>${m.task_id}</code></td>
+            <td>${m.wrong_count} ×</td>
+          </tr>`).join("")
+        : `<tr><td colspan="3" class="empty-note">Świetnie — nic nie sprawia problemów (na razie).</td></tr>`;
+
+      const recentRows = s.recent.slice(0, 25).map(a => `<tr>
+        <td>${fmtDate(a.ts)}</td>
+        <td><span class="pill">${catLabel(a.category)}</span></td>
+        <td><code>${a.task_id}</code></td>
+        <td>${a.ok ? '<span class="pill green">✓ OK</span>' : '<span class="pill red">✗ błąd</span>'}</td>
+      </tr>`).join("") || `<tr><td colspan="4" class="empty-note">Brak prób.</td></tr>`;
+
+      $("content").innerHTML = `
+        <div class="stat-grid">${tiles}</div>
+
+        <section class="block">
+          <h2>📈 Aktywność dzienna (ostatnie 30 dni)</h2>
+          ${barChart}
+        </section>
+
+        <section class="block">
+          <h2>🎯 Wyniki według kategorii</h2>
+          <table class="adm">
+            <tr><th>Kategoria</th><th>Prób</th><th>Poprawnych</th><th>Błędów</th><th>Skuteczność</th></tr>
+            ${totalsRows}
+          </table>
+        </section>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px">
+          <section class="block">
+            <h2>🕒 Sesje nauki (ostatnie 20)</h2>
+            <table class="adm">
+              <tr><th>Początek</th><th>Czas trwania</th></tr>
+              ${sessionsRows}
+            </table>
+          </section>
+
+          <section class="block">
+            <h2>❗ Najczęściej mylone zadania</h2>
+            <table class="adm">
+              <tr><th>Kategoria</th><th>ID zadania</th><th>Razy źle</th></tr>
+              ${missedRows}
+            </table>
+          </section>
+        </div>
+
+        <section class="block">
+          <h2>📜 Ostatnie 25 prób</h2>
+          <div style="overflow-x:auto">
+          <table class="adm">
+            <tr><th>Kiedy</th><th>Kategoria</th><th>Zadanie</th><th>Wynik</th></tr>
+            ${recentRows}
+          </table>
+          </div>
+        </section>
+      `;
+    }
+  </script>
+</body>
+</html>

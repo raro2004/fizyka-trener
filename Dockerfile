@@ -1,15 +1,25 @@
-# Statyczny serwer dla Trenera Fizyki
-FROM nginx:alpine
+FROM node:22-alpine
 
-# Skopiuj pliki aplikacji
-COPY public/ /usr/share/nginx/html/
+# Potrzebne do kompilacji better-sqlite3 (na alpine bez prebuilt binary dla każdej arch)
+RUN apk add --no-cache python3 make g++
 
-# Skopiuj konfigurację
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
 
-# Healthcheck endpoint
-RUN echo "OK" > /usr/share/nginx/html/health
+# Najpierw zależności (cache layer)
+COPY server/package*.json ./server/
+WORKDIR /app/server
+RUN npm install --production && npm cache clean --force
+
+# Reszta plików
+WORKDIR /app
+COPY server/ ./server/
+COPY public/ ./public/
+
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV DATA_DIR=/data
 
 EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app/server
+CMD ["node", "index.js"]

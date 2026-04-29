@@ -1,8 +1,10 @@
 .git
 .github
-node_modules
+**/node_modules
 *.md
 test-engine.js
+test-browser.js
 .gitignore
 .dockerignore
 .fly
+nginx.conf

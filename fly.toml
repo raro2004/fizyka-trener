@@ -1,16 +1,26 @@
 # fly.toml — konfiguracja Fly.io dla Trenera Fizyki
-# UWAGA: nazwę aplikacji zmień podczas pierwszego deploya: `fly launch` zaproponuje nową
 app = "fizyka-trener"
 primary_region = "fra"  # Frankfurt - najbliższy Polski region
 
 [build]
   dockerfile = "Dockerfile"
 
+[env]
+  NODE_ENV = "production"
+  DATA_DIR = "/data"
+
+# UWAGA: tylko jedna maszyna, bo SQLite trzyma stan na lokalnym wolumenie.
+# Dwie maszyny → dwie kopie bazy → niespójność. Dla obciążenia 1-2 osób to nie problem.
+[[mounts]]
+  source = "fizyka_data"
+  destination = "/data"
+  initial_size = "1gb"
+
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"      # zatrzymuje gdy nikt nie używa (oszczędza darmowe godziny)
-  auto_start_machines = true       # uruchamia automatycznie przy pierwszym requeście
+  auto_stop_machines = "stop"
+  auto_start_machines = true
   min_machines_running = 0
   processes = ["app"]
 
@@ -28,4 +38,4 @@ primary_region = "fra"  # Frankfurt - najbliższy Polski region
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "512mb"

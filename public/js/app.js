@@ -10,6 +10,46 @@
   let currentCategory = null;
   let currentTask = null;
   let currentResult = null; // {ok, userAnswers}
+  let currentTaskShownAt = 0; // timestamp pokazania zadania
+  let currentUser = null;     // {login, role}
+
+  // === Komunikacja z backendem ===
+  async function api(path, opts) {
+    opts = opts || {};
+    opts.credentials = "same-origin";
+    opts.headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+    if (opts.body && typeof opts.body !== "string") opts.body = JSON.stringify(opts.body);
+    const res = await fetch(path, opts);
+    if (res.status === 401) { location.href = "/login.html"; return null; }
+    return res;
+  }
+
+  async function checkAuth() {
+    try {
+      const r = await fetch("/api/me", { credentials: "same-origin" });
+      const j = await r.json();
+      if (!j.user) { location.href = "/login.html"; return null; }
+      return j.user;
+    } catch (e) {
+      // jeżeli backend jest offline — pozwól mimo wszystko działać lokalnie
+      return null;
+    }
+  }
+
+  async function recordAttempt(category, taskId, ok, timeSpentMs) {
+    try {
+      await api("/api/attempt", { method: "POST", body: { category, taskId, ok, timeSpentMs } });
+    } catch (e) {/* offline OK */}
+  }
+
+  function startHeartbeat() {
+    fetch("/api/heartbeat", { method: "POST", credentials: "same-origin" }).catch(() => {});
+    setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetch("/api/heartbeat", { method: "POST", credentials: "same-origin" }).catch(() => {});
+      }
+    }, 30000);
+  }
 
   const CATEGORIES = {
     basic: {
@@ -36,7 +76,8 @@
 
   function renderHome() {
     const root = document.getElementById("app");
-    const greeting = state.name ? `Cześć, ${state.name}!` : "Cześć!";
+    const userName = currentUser ? currentUser.login : (state.name || "");
+    const greeting = userName ? `Cześć, ${userName}!` : "Cześć!";
     const cards = Object.keys(CATEGORIES).map(key => {
       const cat = state.categories[key];
       const meta = CATEGORIES[key];
@@ -65,8 +106,8 @@
       </header>
       <main class="cards">${cards}</main>
       <footer>
-        <button id="changeName" class="btn ghost">${state.name ? "Zmień imię" : "Podaj imię"}</button>
         <button id="resetAll" class="btn ghost danger">Wyzeruj postęp</button>
+        <button id="logoutBtn" class="btn ghost">Wyloguj</button>
         <p class="goal">Cel: 5 gwiazdek w każdej kategorii (20 poprawnych odpowiedzi z rzędu).</p>
       </footer>
     `;
@@ -76,13 +117,15 @@
         startSession(el.dataset.cat);
       });
     });
-    document.getElementById("changeName").addEventListener("click", askName);
     document.getElementById("resetAll").addEventListener("click", () => {
       if (confirm("Na pewno wyzerować cały postęp?")) {
         SRS.reset(); state = SRS.load(); renderHome();
       }
     });
-    if (!state.name) askName();
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST", credentials: "same-origin" });
+      location.href = "/login.html";
+    });
   }
 
   function askName() {
@@ -105,12 +148,12 @@
       : (currentCategory === "rz" ? P.rzStatic.map(P.buildRzTask) : P.mixedStatic.map(P.buildMixedTask));
     const generator = () => {
       const t = P.generate(currentCategory);
-      // RZ generator zwraca surowe zadanie, mixed/buildMixedTask też. basicGen też.
       return t;
     };
     const picked = SRS.pickNext(currentCategory, allStatic, generator, state);
     currentTask = picked.task;
     currentResult = null;
+    currentTaskShownAt = Date.now();
     renderTask(picked.source);
   }
 
@@ -203,6 +246,9 @@
     });
     currentResult = { ok: allCorrect, userAnswers };
     SRS.record(currentCategory, currentTask, allCorrect, state);
+    // Zapisz na serwerze
+    const timeSpentMs = Date.now() - currentTaskShownAt;
+    recordAttempt(currentCategory, currentTask.id, allCorrect, timeSpentMs);
 
     const fb = document.getElementById("feedback");
     let html = "";
@@ -258,8 +304,15 @@
   }
 
   // === Start ===
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     state = SRS.load();
+    currentUser = await checkAuth();
+    if (!currentUser) return;  // przekierowano na /login.html
+    if (currentUser.role === "admin") {
+      // Admin trafia od razu do dashboardu
+      location.href = "/admin.html"; return;
+    }
+    startHeartbeat();
     renderHome();
   });
 })();

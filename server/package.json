@@ -1,0 +1,15 @@
+{
+  "name": "fizyka-trener-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "better-sqlite3": "^11.5.0",
+    "bcryptjs": "^2.4.3"
+  }
+}
