@@ -1,7 +1,7 @@
 # fly.toml — konfiguracja Fly.io dla Trenera Fizyki
 # UWAGA: nazwę aplikacji zmień podczas pierwszego deploya: `fly launch` zaproponuje nową
 app = "fizyka-trener"
-primary_region = "fra"  # Warszawa - najbliżej Polski
+primary_region = "fra"  # Frankfurt - najbliższy Polski region
 
 [build]
   dockerfile = "Dockerfile"
