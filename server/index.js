@@ -60,8 +60,13 @@ function ensureUser(login, password, role) {
     console.log(`[seed] utworzono użytkownika ${login} (${role})`);
   }
 }
+// Studenci: STUDENT_LOGIN/STUDENT_PASSWORD (1) + STUDENT2..STUDENT10
 ensureUser(process.env.STUDENT_LOGIN || "kuba", process.env.STUDENT_PASSWORD || "fizyka", "student");
-ensureUser(process.env.STUDENT2_LOGIN || "dominika", process.env.STUDENT2_PASSWORD || "dominikafizyka", "student");
+for (let i = 2; i <= 10; i++) {
+  const login = process.env[`STUDENT${i}_LOGIN`];
+  const password = process.env[`STUDENT${i}_PASSWORD`];
+  if (login && password) ensureUser(login, password, "student");
+}
 ensureUser(process.env.ADMIN_LOGIN || "rafal", process.env.ADMIN_PASSWORD || "admin2026", "admin");
 
 // === Session store (SQLite) ===
