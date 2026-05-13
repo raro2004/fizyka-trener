@@ -1,38 +1,36 @@
 // math-problems.js — zadania matematyki klasa 8 (Zastosowania matematyki)
-// Cztery kategorie:
-//   - math-percent     procenty: X% z liczby, większa/mniejsza, ile było, jaki %
-//   - math-finance     VAT, lokaty bankowe, ceny netto/brutto, podatki
-//   - math-ratio       stosunki, proporcje, roztwory, mieszaniny
-//   - math-probability prawdopodobieństwo (kostka, urna, tablica)
+// Podpowiedzi i rozwiązania pisane prostym językiem dla ucznia słabego z matematyki.
 
 (function (global) {
   "use strict";
   const M = global.MathEngine;
-  const E = global.CircuitEngine; // dla fmt/fmtFrac/fmtBoth
+  const E = global.CircuitEngine;
   const fmt = (x) => E.fmt(x);
   const fmtF = (x) => E.fmtFrac(x);
-  const fmtB = (x) => E.fmtBoth(x);
   const fmtMon = (x) => M.fmtMoney(x);
 
   function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-  function buildHint(given, unknown, formula, transformText) {
+  // === PROSTSZY FORMAT podpowiedzi i rozwiązań ===
+  // hint: intuicja (jak to rozumieć) + numerowane kroki "co zrobić"
+  function hint(intuition, steps) {
     const out = [];
-    out.push("📋 Co masz dane: " + given);
-    out.push("🎯 Co masz znaleźć: " + unknown);
-    out.push("📐 Pasujący wzór: " + formula);
-    if (transformText) out.push("✏️ Trzeba przekształcić: " + transformText);
+    out.push("🤔 SPÓJRZ NA TO TAK:");
+    out.push("   " + intuition);
+    out.push(" ");
+    out.push("🛠️ JAK POLICZYĆ — krok po kroku:");
+    steps.forEach((s, i) => out.push(`   ${i+1}. ${s}`));
     return out;
   }
-  function buildSolution(given, unknown, formula, transformText, substitution, arithmetic, finalAnswer) {
+  // solution: dane, szukane, numerowane kroki z konkretnymi liczbami, odpowiedź
+  function sol(given, unknown, steps, finalAnswer) {
     const out = [];
-    out.push("📋 DANE: " + given);
-    out.push("🎯 SZUKANE: " + unknown);
-    out.push("📐 WZÓR: " + formula);
-    if (transformText) out.push("✏️ PRZEKSZTAŁCAMY: " + transformText);
-    out.push("🔢 PODSTAWIAMY: " + substitution);
-    if (arithmetic) out.push("➗ LICZYMY: " + arithmetic);
+    out.push("📋 Co wiemy: " + given);
+    out.push("❓ Co szukamy: " + unknown);
+    out.push(" ");
+    steps.forEach((s, i) => out.push(`📍 KROK ${i+1}: ${s}`));
+    out.push(" ");
     out.push("✅ ODPOWIEDŹ: " + finalAnswer);
     return out;
   }
@@ -43,59 +41,65 @@
       id: "p1",
       prompt: "Oblicz 40% liczby 2¼ (czyli 2,25). Wpisz wynik jako ułamek lub liczbę dziesiętną.",
       fields: [{ label: "wynik", unit: "", value: 0.9, tol: 0.01 }],
-      hint: buildHint(
-        "p = 40%, x = 2¼ = 9/4 = 2,25",
-        "p% z x",
-        "p% z x = (p/100) · x",
-        "Mnożymy: 40/100 · 9/4 = 0,4 · 2,25"
+      hint: hint(
+        "'X procent z czegoś' = trzeba znaleźć część tej liczby. Np. 40% z 100 zł = 40 zł.",
+        [
+          "Zamień procent na ułamek: 40% = 40/100 = 0,4",
+          "Pomnóż 0,4 razy liczbę (2,25)",
+          "Wynik: 0,4 · 2,25 = ?"
+        ]
       ),
-      solution: buildSolution(
-        "p = 40%; x = 2¼ = 9/4 = 2,25",
-        "40% z 9/4",
-        "p% z x = (p/100) · x",
-        null,
-        "40/100 · 9/4 = 4·9 / (10·4) = 36/40",
-        "= 9/10 = 0,9",
-        "9/10 = 0,9"
+      solution: sol(
+        "liczba = 2¼ = 2,25",
+        "40% tej liczby",
+        [
+          "Zamieniam 40% na ułamek dziesiętny: 40% = 40/100 = 0,4",
+          "Mnożę: 0,4 · 2,25 = 0,9 (albo: 9/10)"
+        ],
+        "0,9 (= 9/10)"
       )
     },
     {
       id: "p2",
       prompt: "Mama wydała 18 zł w sklepie, co stanowiło 15% gotówki, którą miała w portfelu. Ile gotówki miała mama przed zakupami?",
       fields: [{ label: "gotówka", unit: "zł", value: 120, tol: 0.5 }],
-      hint: buildHint(
-        "część = 18 zł, p = 15% (część stanowi p% całości)",
-        "całość (gotówka) w zł",
-        "część = (p/100) · całość",
-        "Dzielimy: całość = część · 100 / p = 18 · 100 / 15"
+      hint: hint(
+        "Wiemy że MAŁA część (15%) to 18 zł. Trzeba znaleźć CAŁOŚĆ (100%). Sztuczka: najpierw policzyć 1%, potem 100%.",
+        [
+          "Skoro 15% to 18 zł, to 1% to 15 razy mniej.",
+          "Policz: 1% = 18 ÷ 15 = ?",
+          "Całość to 100%, czyli 100 razy więcej niż 1%.",
+          "Pomnóż wynik z punktu 2 razy 100."
+        ]
       ),
-      solution: buildSolution(
-        "część = 18 zł; p = 15%",
-        "całość gotówki",
-        "część = (p/100) · całość",
-        "całość = część · 100 / p",
-        "całość = 18 zł · 100 / 15",
-        "= 1800/15 = 120",
-        "120 zł"
+      solution: sol(
+        "15% gotówki = 18 zł",
+        "ile gotówki mama miała (100%)",
+        [
+          "Liczę ile to 1% gotówki: 18 zł ÷ 15 = 1,20 zł",
+          "Liczę 100% (czyli całość): 1,20 zł · 100 = 120 zł"
+        ],
+        "Mama miała 120 zł"
       )
     },
     {
       id: "p3",
-      prompt: "O ile złotych mniej niż 500 zł to kwota o 9% mniejsza? Podaj wartość kwoty pomniejszonej.",
+      prompt: "Ile kosztuje coś, co jest o 9% tańsze niż 500 zł?",
       fields: [{ label: "kwota", unit: "zł", value: 455, tol: 0.5 }],
-      hint: buildHint(
-        "x = 500 zł, p = 9% mniej",
-        "kwota o 9% mniejsza od 500",
-        "wynik = x · (1 − p/100)",
-        "wynik = 500 · (1 − 0,09) = 500 · 0,91"
+      hint: hint(
+        "'O 9% mniej' = odejmujemy 9% od ceny. Trzeba policzyć ile to jest 9% z 500 zł, a potem odjąć.",
+        [
+          "Policz 9% z 500 zł (zamień 9% na 0,09 i pomnóż razy 500).",
+          "Odejmij to od 500 zł."
+        ]
       ),
-      solution: buildSolution(
-        "x = 500 zł; pomniejszamy o 9%",
-        "kwota o 9% mniejsza od 500 zł",
-        "wynik = x · (1 − p/100)",
-        null,
-        "wynik = 500 · (1 − 0,09) = 500 · 0,91",
-        "= 455",
+      solution: sol(
+        "cena = 500 zł; obniżka 9%",
+        "cena po obniżce",
+        [
+          "Liczę 9% z 500: 0,09 · 500 = 45 zł",
+          "Odejmuję od ceny: 500 − 45 = 455 zł"
+        ],
         "455 zł"
       )
     },
@@ -103,19 +107,21 @@
       id: "p4",
       prompt: "Ile metrów to o 70% więcej niż 200 m?",
       fields: [{ label: "wynik", unit: "m", value: 340, tol: 0.5 }],
-      hint: buildHint(
-        "x = 200 m, p = 70% więcej",
-        "długość o 70% większa od 200 m",
-        "wynik = x · (1 + p/100)",
-        "wynik = 200 · 1,70"
+      hint: hint(
+        "'O 70% więcej' = dodajemy 70% do liczby. Najpierw policz ile to jest 70% z 200, potem DODAJ.",
+        [
+          "Zamień 70% na ułamek: 70% = 0,7",
+          "Pomnóż: 0,7 · 200 = ? (to ile dodajemy)",
+          "Dodaj do 200 m."
+        ]
       ),
-      solution: buildSolution(
-        "x = 200 m; powiększamy o 70%",
-        "długość o 70% większa od 200 m",
-        "wynik = x · (1 + p/100)",
-        null,
-        "wynik = 200 · (1 + 0,70) = 200 · 1,70",
-        "= 340",
+      solution: sol(
+        "200 m, dodajemy 70%",
+        "ile metrów po powiększeniu",
+        [
+          "Liczę 70% z 200 m: 0,7 · 200 = 140 m",
+          "Dodaję do 200: 200 + 140 = 340 m"
+        ],
         "340 m"
       )
     },
@@ -123,99 +129,115 @@
       id: "p5",
       prompt: "O ile procent 360 kg to więcej niż 240 kg?",
       fields: [{ label: "różnica", unit: "%", value: 50, tol: 0.5 }],
-      hint: buildHint(
-        "a = 360 kg (większa), b = 240 kg (mniejsza)",
-        "o ile procent a jest większe od b",
-        "p = (a − b) / b · 100%",
-        "Liczymy różnicę względem MNIEJSZEJ wartości"
+      hint: hint(
+        "Pytanie 'o ile procent więcej' — porównujemy dwie liczby. Liczymy o ile się różnią, a potem sprawdzamy ile to procent MNIEJSZEJ (od której zaczynaliśmy).",
+        [
+          "Policz różnicę: 360 − 240 = ?",
+          "Podziel tę różnicę przez MNIEJSZĄ liczbę (240).",
+          "Pomnóż wynik razy 100, żeby zamienić na %."
+        ]
       ),
-      solution: buildSolution(
-        "a = 360 kg; b = 240 kg",
-        "o ile % a > b",
-        "p = (a − b) / b · 100%",
-        null,
-        "p = (360 − 240) / 240 · 100% = 120/240 · 100%",
-        "= 1/2 · 100% = 50%",
-        "50%"
+      solution: sol(
+        "porównujemy 360 kg i 240 kg",
+        "o ile % 360 > 240",
+        [
+          "Liczę różnicę: 360 − 240 = 120 kg",
+          "Dzielę różnicę przez mniejszą (240): 120 ÷ 240 = 0,5",
+          "Zamieniam na %: 0,5 · 100% = 50%"
+        ],
+        "50% (360 jest o połowę większe od 240)"
       )
     },
     {
       id: "p6",
       prompt: "O ile procent 45 osób to mniej niż 60 osób?",
       fields: [{ label: "różnica", unit: "%", value: 25, tol: 0.5 }],
-      hint: buildHint(
-        "a = 45 (mniejsza), b = 60 (większa, czyli ta od której liczymy)",
-        "o ile procent a jest mniejsze od b",
-        "p = (b − a) / b · 100%",
-        "Liczymy różnicę względem WIĘKSZEJ wartości"
+      hint: hint(
+        "'O ile procent mniej' — porównujemy. Liczymy różnicę, a potem ile to procent WIĘKSZEJ liczby (od której zaczynaliśmy).",
+        [
+          "Policz różnicę: 60 − 45 = ?",
+          "Podziel różnicę przez WIĘKSZĄ liczbę (60).",
+          "Pomnóż razy 100, żeby było %."
+        ]
       ),
-      solution: buildSolution(
-        "a = 45 osób; b = 60 osób",
-        "o ile % a < b",
-        "p = (b − a) / b · 100%",
-        null,
-        "p = (60 − 45) / 60 · 100% = 15/60 · 100%",
-        "= 1/4 · 100% = 25%",
-        "25%"
+      solution: sol(
+        "porównujemy 45 i 60",
+        "o ile % 45 < 60",
+        [
+          "Różnica: 60 − 45 = 15",
+          "Dzielę przez większą (60): 15 ÷ 60 = 0,25",
+          "Zamieniam na %: 0,25 · 100% = 25%"
+        ],
+        "25% (45 osób to ¼ mniej niż 60)"
       )
     },
     {
       id: "p7",
       prompt: "Rower kosztował 1400 zł. Przeceniono go o 40%. Ile kosztuje rower po przecenie?",
       fields: [{ label: "cena", unit: "zł", value: 840, tol: 0.5 }],
-      hint: buildHint(
-        "cena początkowa = 1400 zł, obniżka 40%",
-        "cena po obniżce",
-        "cena_nowa = cena · (1 − p/100)",
-        "cena_nowa = 1400 · 0,60"
+      hint: hint(
+        "Cena spada o 40%. Najpierw policz ILE PIENIĘDZY to jest 40% z 1400 zł, a potem ODEJMIJ od ceny.",
+        [
+          "Zamień 40% na 0,4.",
+          "Pomnóż 0,4 · 1400 = ? (to ile odpada)",
+          "Odejmij od 1400 zł."
+        ]
       ),
-      solution: buildSolution(
-        "cena = 1400 zł; obniżka p = 40%",
+      solution: sol(
+        "cena = 1400 zł; obniżka 40%",
         "cena po przecenie",
-        "cena_nowa = cena · (1 − p/100)",
-        null,
-        "cena_nowa = 1400 · (1 − 0,40) = 1400 · 0,60",
-        "= 840",
+        [
+          "40% z 1400: 0,4 · 1400 = 560 zł (tyle odpada)",
+          "Nowa cena: 1400 − 560 = 840 zł"
+        ],
         "840 zł"
       )
     },
     {
       id: "p8",
-      prompt: "Cenę kurtki obniżono o 16% i obecnie wynosi ona 336 zł. Ile kosztowała kurtka przed obniżką?",
+      prompt: "Cenę kurtki obniżono o 16% i teraz wynosi 336 zł. Ile kosztowała kurtka PRZED obniżką?",
       fields: [{ label: "cena", unit: "zł", value: 400, tol: 0.5 }],
-      hint: buildHint(
-        "cena_po = 336 zł, obniżka 16% (czyli zostało 84% ceny)",
-        "cena przed obniżką",
-        "cena_po = cena · (1 − p/100)  →  cena = cena_po / (1 − p/100)",
-        "cena = 336 / 0,84"
+      hint: hint(
+        "Cena spadła o 16%, więc to co zostało to 100% − 16% = 84% starej ceny. Czyli 336 zł = 84% starej ceny. Trzeba znaleźć całość (100%).",
+        [
+          "Stara cena to 100%. Po obniżce zostało 100% − 16% = 84%.",
+          "Czyli 84% starej ceny = 336 zł.",
+          "Policz 1% starej ceny: 336 ÷ 84 = ?",
+          "Pomnóż razy 100 żeby dostać 100% (całą starą cenę)."
+        ]
       ),
-      solution: buildSolution(
-        "cena_po = 336 zł; obniżka p = 16%",
+      solution: sol(
+        "cena po obniżce = 336 zł; obniżka 16%",
         "cena przed obniżką",
-        "cena_po = cena · (1 − p/100)",
-        "cena = cena_po / (1 − p/100)",
-        "cena = 336 zł / (1 − 0,16) = 336 / 0,84",
-        "= 33600 / 84 = 400",
-        "400 zł"
+        [
+          "Zostało 100% − 16% = 84% starej ceny",
+          "Czyli 84% starej ceny = 336 zł",
+          "1% starej ceny: 336 ÷ 84 = 4 zł",
+          "100% starej ceny: 4 · 100 = 400 zł"
+        ],
+        "Stara cena to 400 zł"
       )
     },
     {
       id: "p9",
-      prompt: "Ile soli trzeba wsypać do 18 kg wody, aby otrzymać roztwór dziesięcioprocentowy (10%)?",
+      prompt: "Ile soli trzeba wsypać do 18 kg wody, aby otrzymać roztwór 10-procentowy?",
       fields: [{ label: "sól", unit: "kg", value: 2, tol: 0.05 }],
-      hint: buildHint(
-        "woda = 18 kg, roztwór ma być 10% (czyli sól / (sól+woda) = 10%)",
-        "ile kg soli s",
-        "10/100 = s / (s + 18)",
-        "Z proporcji: s · 100 = 10 · (s + 18) → s · 90 = 180 → s = 2"
+      hint: hint(
+        "10% roztwór = sól stanowi 10% całości (sól + woda). Czyli na 10 kg roztworu jest 1 kg soli i 9 kg wody — proporcja sól:woda = 1:9.",
+        [
+          "Proporcja sól:woda = 1:9 (1 kg soli na każde 9 kg wody).",
+          "Mamy 18 kg wody — to jest 9 razy 2.",
+          "Soli będzie 1 razy 2 = 2 kg."
+        ]
       ),
-      solution: buildSolution(
-        "woda = 18 kg; stężenie p = 10%",
-        "masa soli s [kg]",
-        "p/100 = s / (s + woda)",
-        "s = p · woda / (100 − p)",
-        "s = 10 · 18 / (100 − 10) = 180 / 90",
-        "= 2",
+      solution: sol(
+        "woda = 18 kg; roztwór ma być 10% (sól w roztworze)",
+        "ile kg soli",
+        [
+          "Roztwór 10% to znaczy: na 100 g roztworu jest 10 g soli i 90 g wody.",
+          "Proporcja: sól / woda = 10/90 = 1/9",
+          "Mamy 18 kg wody, więc soli: 18 ÷ 9 = 2 kg"
+        ],
         "2 kg soli"
       )
     },
@@ -223,60 +245,73 @@
       id: "p10",
       prompt: "Mama upiekła 40 ciasteczek. Wojtek zjadł 20% wszystkich, Asia ¼ pozostałych, tata 50% pozostałych, a resztę zjadła mama. Jaki procent wszystkich ciasteczek zjadła mama?",
       fields: [{ label: "procent", unit: "%", value: 30, tol: 0.5 }],
-      hint: buildHint(
-        "Razem 40 ciasteczek. Sekwencyjne zjadanie",
-        "% mamy ze wszystkich ciasteczek",
-        "Krok po kroku: po Wojtku 80%, po Asi 80%·3/4 = 60%, po tacie 60%·1/2 = 30%",
-        "Mama dostała 30% wszystkich"
+      hint: hint(
+        "Każdy bierze ze stosu który ZOSTAŁ po poprzedniku. Liczmy ile zostało po każdym po kolei.",
+        [
+          "Wojtek: zjadł 20%, ZOSTAŁO 80% wszystkich.",
+          "Asia: zjadła ¼ z tego, co zostało (z 80%). ¼ z 80% = 20%. ZOSTAŁO 80% − 20% = 60%.",
+          "Tata: zjadł 50% z tego, co zostało (60%). 50% z 60% = 30%. ZOSTAŁO 30%.",
+          "Mama dostała resztę = 30% wszystkich."
+        ]
       ),
-      solution: buildSolution(
-        "razem = 40; Wojtek 20%, Asia ¼ pozostałych, tata 50% pozostałych",
+      solution: sol(
+        "40 ciasteczek; kolejno: Wojtek 20%, Asia ¼ pozostałych, tata 50% pozostałych",
         "% mamy",
-        "Krokowo: zostawiamy procent po każdym",
-        "po Wojtku: 100% − 20% = 80% wszystkich.  Po Asi: 80% · (1 − 1/4) = 80% · 3/4 = 60%.  Po tacie: 60% · (1 − 1/2) = 60% · 1/2 = 30%",
-        "Mama: 30% z 40 = 12 ciasteczek",
-        "30% / 40 = 12/40 = 30%",
+        [
+          "Po Wojtku: zostało 100% − 20% = 80% (czyli 32 ciasteczka z 40)",
+          "Asia zjadła ¼ z 32 = 8 ciasteczek. Zostało 32 − 8 = 24 (to 60% wszystkich)",
+          "Tata zjadł 50% z 24 = 12. Zostało 24 − 12 = 12 ciasteczek (to 30% wszystkich)",
+          "Mama dostała 12 ciasteczek = 30% wszystkich"
+        ],
         "30% (mama zjadła 12 ciasteczek)"
       )
     },
     {
       id: "p11",
-      prompt: "Jaką liczbę otrzymamy, gdy liczbę a = 50 powiększymy o 27%?",
+      prompt: "Jaką liczbę otrzymamy, gdy liczbę 50 powiększymy o 27%?",
       fields: [{ label: "wynik", unit: "", value: 63.5, tol: 0.05 }],
-      hint: buildHint(
-        "a = 50, powiększamy o 27%",
-        "liczba o 27% większa",
-        "wynik = a · (1 + p/100)",
-        "wynik = 50 · 1,27"
+      hint: hint(
+        "Powiększyć o 27% = dodać 27% do liczby. Policz 27% z 50 i dodaj.",
+        [
+          "Zamień 27% na 0,27.",
+          "Pomnóż: 0,27 · 50 = ? (tyle dodajemy)",
+          "Dodaj do 50."
+        ]
       ),
-      solution: buildSolution(
-        "a = 50; powiększamy o p = 27%",
-        "liczba o 27% większa",
-        "wynik = a · (1 + p/100)",
-        null,
-        "wynik = 50 · (1 + 0,27) = 50 · 1,27",
-        "= 63,5",
+      solution: sol(
+        "50; powiększamy o 27%",
+        "nowa liczba",
+        [
+          "27% z 50: 0,27 · 50 = 13,5",
+          "Dodaję do 50: 50 + 13,5 = 63,5"
+        ],
         "63,5"
       )
     },
     {
       id: "p12",
-      prompt: "Wartość pewnej akcji wzrosła o 20%, a następnie spadła o 20%. Czy wróciła do ceny początkowej? Podaj jaki procent ceny początkowej stanowi cena po dwóch zmianach.",
+      prompt: "Cena akcji wzrosła o 20%, a potem spadła o 20%. Jaki procent ceny POCZĄTKOWEJ stanowi cena końcowa?",
       fields: [{ label: "procent", unit: "%", value: 96, tol: 0.5 }],
-      hint: buildHint(
-        "Wzrost 20%, potem spadek 20%",
-        "% ceny początkowej",
-        "cena_końcowa = cena · 1,20 · 0,80",
-        "Liczymy iloczyn: 1,20 · 0,80 = 0,96 = 96%"
+      hint: hint(
+        "Uwaga PUŁAPKA! Wzrost 20% i spadek 20% NIE dają 0%! Po wzroście kwota jest WIĘKSZA, więc 20% z większej kwoty to więcej pieniędzy niż 20% z mniejszej. Najlepiej policzyć na przykładowej kwocie 100 zł.",
+        [
+          "Przyjmij że cena = 100 zł.",
+          "Po wzroście o 20%: 100 + 20% z 100 = 100 + 20 = 120 zł.",
+          "Spadek o 20% liczymy z 120 zł: 20% z 120 = 24 zł.",
+          "Cena końcowa: 120 − 24 = 96 zł.",
+          "96 zł to 96% z 100 zł (początkowej)."
+        ]
       ),
-      solution: buildSolution(
-        "cena · (+20%) · (−20%)",
+      solution: sol(
+        "wzrost 20%, potem spadek 20%",
         "jaki % ceny początkowej",
-        "cena_końcowa = cena · (1 + p/100) · (1 − p/100)",
-        null,
-        "cena_końcowa = cena · 1,20 · 0,80 = cena · 0,96",
-        "= 96% ceny początkowej",
-        "96% — NIE wraca do początkowej (mniej o 4%)"
+        [
+          "Załóżmy że cena = 100 zł",
+          "Po wzroście o 20%: 100 + 20 = 120 zł",
+          "Spadek o 20% od 120: 20% z 120 = 24 zł. Nowa cena: 120 − 24 = 96 zł",
+          "96 zł to 96% ze 100 zł — cena spadła łącznie o 4%"
+        ],
+        "96% — NIE wraca do początkowej (jest o 4% mniej)"
       )
     }
   ];
@@ -284,275 +319,334 @@
   function percentGen() {
     const t = rand(1, 6);
     if (t === 1) {
-      // p% z x
-      const p = pick([5, 10, 15, 20, 25, 30, 40, 50, 60, 75]); const x = pick([20, 40, 60, 80, 100, 120, 200, 240, 300, 400, 500]);
+      const p = pick([10, 20, 25, 30, 40, 50, 60, 75]); const x = pick([20, 40, 60, 80, 100, 200, 300, 400, 500]);
       const v = M.percentOf(p, x);
       return {
         id: `pg1-${p}-${x}`,
         prompt: `Oblicz ${p}% liczby ${x}.`,
         fields: [{ label: "wynik", unit: "", value: v, tol: 0.05 }],
-        hint: buildHint(`p = ${p}%, x = ${x}`, `${p}% z ${x}`, "p% z x = (p/100) · x", "Mnożymy: p/100 razy x"),
-        solution: buildSolution(`p = ${p}%; x = ${x}`, `${p}% z ${x}`, "p% z x = (p/100) · x", null,
-          `${p}/100 · ${x}`, `= ${p*x}/100 = ${v}`, `${fmt(v)}`)
+        hint: hint(
+          `Pytanie '${p}% z ${x}' oznacza znaleźć część tej liczby.`,
+          [`Zamień ${p}% na ułamek dziesiętny: ${p}% = ${p/100}`, `Pomnóż: ${p/100} · ${x} = ?`]
+        ),
+        solution: sol(
+          `liczba = ${x}`,
+          `${p}% tej liczby`,
+          [`Zamieniam ${p}% na ${p/100}`, `Mnożę: ${p/100} · ${x} = ${v}`],
+          `${fmt(v)}`
+        )
       };
     }
     if (t === 2) {
-      // o p% większa od x
-      const p = pick([5, 10, 15, 20, 25, 30, 40, 50, 70]); const x = pick([100, 150, 200, 250, 300, 400, 500]);
+      const p = pick([10, 15, 20, 25, 30, 40, 50]); const x = pick([100, 150, 200, 300, 400, 500]);
       const v = M.incrPct(x, p);
+      const dodatek = M.percentOf(p, x);
       return {
         id: `pg2-${p}-${x}`,
-        prompt: `Liczba o ${p}% większa od ${x} wynosi:`,
+        prompt: `Ile to jest liczba o ${p}% większa od ${x}?`,
         fields: [{ label: "wynik", unit: "", value: v, tol: 0.05 }],
-        hint: buildHint(`x = ${x}, powiększamy o ${p}%`, `liczba o ${p}% większa`, "wynik = x · (1 + p/100)", `wynik = ${x} · ${1+p/100}`),
-        solution: buildSolution(`x = ${x}; p = ${p}%`, `liczba o ${p}% większa od ${x}`, "wynik = x · (1 + p/100)", null,
-          `${x} · (1 + ${p}/100) = ${x} · ${1+p/100}`, `= ${v}`, `${fmt(v)}`)
+        hint: hint(
+          `'O ${p}% większa' = dodajemy ${p}% do liczby. Policz ${p}% z ${x} i dodaj.`,
+          [`Policz ${p}% z ${x} (czyli ${p/100} · ${x})`, `Dodaj do ${x}`]
+        ),
+        solution: sol(
+          `${x}, dodajemy ${p}%`,
+          `nowa liczba`,
+          [`${p}% z ${x}: ${p/100} · ${x} = ${dodatek}`, `Dodaję do ${x}: ${x} + ${dodatek} = ${v}`],
+          `${fmt(v)}`
+        )
       };
     }
     if (t === 3) {
-      // o p% mniejsza od x
-      const p = pick([5, 10, 15, 20, 25, 40, 50, 60]); const x = pick([100, 200, 300, 400, 500, 800, 1000]);
+      const p = pick([10, 15, 20, 25, 30, 40, 50]); const x = pick([100, 200, 300, 500, 800, 1000]);
       const v = M.decrPct(x, p);
+      const ujemka = M.percentOf(p, x);
       return {
         id: `pg3-${p}-${x}`,
-        prompt: `Liczba o ${p}% mniejsza od ${x} wynosi:`,
+        prompt: `Ile to jest liczba o ${p}% mniejsza od ${x}?`,
         fields: [{ label: "wynik", unit: "", value: v, tol: 0.05 }],
-        hint: buildHint(`x = ${x}, pomniejszamy o ${p}%`, `liczba o ${p}% mniejsza`, "wynik = x · (1 − p/100)", `wynik = ${x} · ${1-p/100}`),
-        solution: buildSolution(`x = ${x}; p = ${p}%`, `liczba o ${p}% mniejsza od ${x}`, "wynik = x · (1 − p/100)", null,
-          `${x} · (1 − ${p}/100) = ${x} · ${1-p/100}`, `= ${v}`, `${fmt(v)}`)
+        hint: hint(
+          `'O ${p}% mniejsza' = odejmujemy ${p}% od liczby. Policz ${p}% z ${x} i odejmij.`,
+          [`Policz ${p}% z ${x}: ${p/100} · ${x}`, `Odejmij od ${x}`]
+        ),
+        solution: sol(
+          `${x}, odejmujemy ${p}%`,
+          `nowa liczba`,
+          [`${p}% z ${x}: ${p/100} · ${x} = ${ujemka}`, `Odejmuję od ${x}: ${x} − ${ujemka} = ${v}`],
+          `${fmt(v)}`
+        )
       };
     }
     if (t === 4) {
-      // jaki procent jest a z b
       const b = pick([20, 40, 50, 100, 200, 500]); const ratio = pick([0.1, 0.2, 0.25, 0.4, 0.5, 0.75]); const a = b * ratio; const p = a/b * 100;
       return {
         id: `pg4-${a}-${b}`,
         prompt: `Jaki procent liczby ${b} stanowi liczba ${a}?`,
         fields: [{ label: "procent", unit: "%", value: p, tol: 0.5 }],
-        hint: buildHint(`a = ${a}, b = ${b}`, `p% jaki a stanowi z b`, "p = a/b · 100%", `${a}/${b} · 100%`),
-        solution: buildSolution(`a = ${a}; b = ${b}`, `jaki % b stanowi a`, "p = a/b · 100%", null,
-          `${a}/${b} · 100%`, `= ${a/b} · 100% = ${p}%`, `${p}%`)
+        hint: hint(
+          `Pytanie 'jaki procent A stanowi z B' — sprawdzamy jaka część to A z B.`,
+          [`Podziel: ${a} ÷ ${b} = ?`, `Pomnóż wynik razy 100 (żeby zamienić ułamek na %)`]
+        ),
+        solution: sol(
+          `${a} i ${b}`,
+          `jaki % z ${b} stanowi ${a}`,
+          [`Dzielę: ${a} ÷ ${b} = ${a/b}`, `Zamieniam na %: ${a/b} · 100% = ${p}%`],
+          `${p}%`
+        )
       };
     }
     if (t === 5) {
-      // ile było (część = p%, ile całość)
       const p = pick([5, 10, 15, 20, 25, 50]); const total = pick([100, 200, 300, 400, 600, 800]);
       const part = M.percentOf(p, total);
       return {
         id: `pg5-${p}-${total}`,
         prompt: `${fmt(part)} zł stanowi ${p}% pewnej kwoty. Jaka to kwota?`,
         fields: [{ label: "kwota", unit: "zł", value: total, tol: 0.5 }],
-        hint: buildHint(`część = ${fmt(part)} zł, p = ${p}%`, `całość`, "część = (p/100) · całość", `całość = część · 100 / p = ${fmt(part)} · 100 / ${p}`),
-        solution: buildSolution(`część = ${fmt(part)} zł; p = ${p}%`, `całość`, "część = (p/100) · całość", "całość = część · 100/p",
-          `${fmt(part)} · 100 / ${p}`, `= ${fmt(part*100)}/${p} = ${total}`, `${total} zł`)
+        hint: hint(
+          `Wiemy że MAŁA część (${p}%) to ${fmt(part)} zł. Trzeba znaleźć CAŁOŚĆ (100%).`,
+          [`Policz 1% kwoty: ${fmt(part)} ÷ ${p} = ?`, `Pomnóż razy 100 żeby dostać 100% (całość)`]
+        ),
+        solution: sol(
+          `${fmt(part)} zł = ${p}% kwoty`,
+          `całość kwoty`,
+          [`1% kwoty: ${fmt(part)} ÷ ${p} = ${fmt(part/p)} zł`, `100% kwoty: ${fmt(part/p)} · 100 = ${total} zł`],
+          `${total} zł`
+        )
       };
     }
-    // t == 6 — o ile procent większe/mniejsze
     const b = pick([200, 240, 300, 400, 500]); const factor = pick([1.25, 1.5, 1.75, 2.0, 0.75, 0.6, 0.5]); const a = b * factor;
     if (a > b) {
       const p = M.pctLargerThan(a, b);
       return {
         id: `pg6-${a}-${b}`,
-        prompt: `O ile procent ${a} to więcej niż ${b}?`,
+        prompt: `O ile procent ${fmt(a)} to więcej niż ${b}?`,
         fields: [{ label: "różnica", unit: "%", value: p, tol: 0.5 }],
-        hint: buildHint(`a = ${a} (większa), b = ${b} (mniejsza)`, "o ile % a > b", "p = (a − b)/b · 100%", "Liczymy różnicę względem mniejszej"),
-        solution: buildSolution(`a = ${a}; b = ${b}`, "o ile % a > b", "p = (a − b)/b · 100%", null,
-          `(${a} − ${b})/${b} · 100%`, `= ${a-b}/${b} · 100% = ${p}%`, `${p}%`)
+        hint: hint(
+          `Porównujemy ${fmt(a)} i ${b}. Mniejsza to ${b} — od niej liczymy procent.`,
+          [`Policz różnicę: ${fmt(a)} − ${b} = ?`, `Podziel różnicę przez MNIEJSZĄ liczbę (${b})`, `Pomnóż razy 100% żeby dostać %`]
+        ),
+        solution: sol(
+          `porównujemy ${fmt(a)} i ${b}`,
+          `o ile % ${fmt(a)} > ${b}`,
+          [`Różnica: ${fmt(a)} − ${b} = ${fmt(a-b)}`, `Dzielę przez mniejszą (${b}): ${fmt(a-b)} ÷ ${b} = ${fmt((a-b)/b)}`, `Zamieniam na %: ${fmt((a-b)/b)} · 100% = ${p}%`],
+          `${p}%`
+        )
       };
     } else {
       const p = M.pctSmallerThan(a, b);
       return {
         id: `pg6b-${a}-${b}`,
-        prompt: `O ile procent ${a} to mniej niż ${b}?`,
+        prompt: `O ile procent ${fmt(a)} to mniej niż ${b}?`,
         fields: [{ label: "różnica", unit: "%", value: p, tol: 0.5 }],
-        hint: buildHint(`a = ${a} (mniejsza), b = ${b} (większa)`, "o ile % a < b", "p = (b − a)/b · 100%", "Liczymy różnicę względem większej"),
-        solution: buildSolution(`a = ${a}; b = ${b}`, "o ile % a < b", "p = (b − a)/b · 100%", null,
-          `(${b} − ${a})/${b} · 100%`, `= ${b-a}/${b} · 100% = ${p}%`, `${p}%`)
+        hint: hint(
+          `Porównujemy ${fmt(a)} i ${b}. Większa to ${b} — od niej liczymy procent.`,
+          [`Policz różnicę: ${b} − ${fmt(a)} = ?`, `Podziel przez WIĘKSZĄ liczbę (${b})`, `Pomnóż razy 100%`]
+        ),
+        solution: sol(
+          `porównujemy ${fmt(a)} i ${b}`,
+          `o ile % ${fmt(a)} < ${b}`,
+          [`Różnica: ${b} − ${fmt(a)} = ${fmt(b-a)}`, `Dzielę przez większą (${b}): ${fmt(b-a)} ÷ ${b} = ${fmt((b-a)/b)}`, `Zamieniam na %: ${fmt((b-a)/b)} · 100% = ${p}%`],
+          `${p}%`
+        )
       };
     }
   }
 
-  // ============= KATEGORIA 2: FINANSE (VAT, lokaty, ceny) =============
+  // ============= KATEGORIA 2: FINANSE =============
   const financeStatic = [
     {
       id: "f1",
-      prompt: "Oprocentowanie na lokacie rocznej w pewnym banku wynosi 2,5%. Wpłacono na tę lokatę 7000 zł. Jaki będzie stan konta po roku?",
+      prompt: "Oprocentowanie lokaty rocznej wynosi 2,5%. Wpłacono 7000 zł. Jaki będzie stan konta po roku?",
       fields: [{ label: "stan", unit: "zł", value: 7175, tol: 0.5 }],
-      hint: buildHint(
-        "K0 = 7000 zł, oprocentowanie roczne r = 2,5%, czas 1 rok",
-        "stan konta po roku",
-        "K = K0 · (1 + r/100)",
-        "K = 7000 · 1,025"
+      hint: hint(
+        "Bank dolicza 2,5% od włożonej kwoty po roku. Wystarczy policzyć 2,5% z 7000 zł i dodać do 7000.",
+        [
+          "Policz 2,5% z 7000 zł (zamień 2,5% na 0,025 i pomnóż)",
+          "Dodaj wynik do 7000 zł"
+        ]
       ),
-      solution: buildSolution(
-        "K0 = 7000 zł; r = 2,5%; t = 1 rok",
+      solution: sol(
+        "7000 zł na 2,5% rocznie, t = 1 rok",
         "stan konta po roku",
-        "K = K0 · (1 + r/100)",
-        null,
-        "K = 7000 · (1 + 0,025) = 7000 · 1,025",
-        "= 7175",
+        [
+          "2,5% z 7000: 0,025 · 7000 = 175 zł (to są odsetki)",
+          "Stan konta: 7000 + 175 = 7175 zł"
+        ],
         "7175 zł"
       )
     },
     {
       id: "f2",
-      prompt: "Na lokatę roczną oprocentowaną 3% wpłacono 2000 zł. Oprocentowanie nie zmieniło się. Jaki będzie stan konta po DWÓCH latach?",
+      prompt: "Wpłacono 2000 zł na lokatę o oprocentowaniu 3% rocznie. Po DWÓCH latach stan konta wyniesie?",
       fields: [{ label: "stan", unit: "zł", value: 2121.80, tol: 0.5 }],
-      hint: buildHint(
-        "K0 = 2000 zł, r = 3%, t = 2 lata (kapitalizacja roczna)",
-        "stan po 2 latach",
-        "K = K0 · (1 + r/100)^t",
-        "Po 1 roku: 2060. Z tej kwoty znów 3% odsetek: 2060 · 1,03 = 2121,80"
+      hint: hint(
+        "Po pierwszym roku bank doda 3% odsetek do 2000 zł. W drugim roku dolicza 3% NIE od początkowej kwoty, ale od już większej (z odsetkami z pierwszego roku).",
+        [
+          "Policz 3% z 2000 zł: 0,03 · 2000 = 60 zł. Po 1. roku: 2000 + 60 = 2060 zł.",
+          "W drugim roku liczymy 3% z 2060 zł: 0,03 · 2060 = 61,80 zł.",
+          "Po 2. roku: 2060 + 61,80 = 2121,80 zł."
+        ]
       ),
-      solution: buildSolution(
-        "K0 = 2000 zł; r = 3%; t = 2 lata",
+      solution: sol(
+        "2000 zł na 3% rocznie, 2 lata",
         "stan po 2 latach",
-        "K = K0 · (1 + r/100)^t",
-        null,
-        "K = 2000 · 1,03 · 1,03 = 2000 · 1,0609",
-        "= 2121,80",
+        [
+          "Po 1. roku: 3% z 2000 = 60 zł odsetek. Stan: 2000 + 60 = 2060 zł",
+          "Po 2. roku: 3% z 2060 = 61,80 zł odsetek. Stan: 2060 + 61,80 = 2121,80 zł"
+        ],
         "2121,80 zł"
       )
     },
     {
       id: "f3",
-      prompt: "Stawka VAT przy sprzedaży roweru wynosi 23%. Cena netto roweru to 1300 zł. Ile wynosi cena brutto (z VAT)?",
+      prompt: "Rower ma cenę netto 1300 zł. Stawka VAT to 23%. Ile wynosi cena brutto (z VAT)?",
       fields: [{ label: "brutto", unit: "zł", value: 1599, tol: 0.5 }],
-      hint: buildHint(
-        "netto = 1300 zł, VAT = 23%",
-        "cena brutto (z VAT)",
-        "brutto = netto · (1 + VAT/100)",
-        "brutto = 1300 · 1,23"
+      hint: hint(
+        "VAT to podatek doliczany do ceny. Cena brutto = cena netto + VAT. Trzeba policzyć 23% z 1300 zł i dodać.",
+        [
+          "Policz 23% z 1300 zł: 0,23 · 1300 = ? (to jest VAT)",
+          "Dodaj VAT do ceny netto: 1300 + VAT = ?"
+        ]
       ),
-      solution: buildSolution(
-        "netto = 1300 zł; VAT = 23%",
+      solution: sol(
+        "cena netto = 1300 zł; VAT = 23%",
         "cena brutto",
-        "brutto = netto · (1 + VAT/100)",
-        null,
-        "brutto = 1300 · (1 + 0,23) = 1300 · 1,23",
-        "= 1599",
+        [
+          "23% z 1300: 0,23 · 1300 = 299 zł (to jest podatek VAT)",
+          "Brutto = netto + VAT = 1300 + 299 = 1599 zł"
+        ],
         "1599 zł"
       )
     },
     {
       id: "f4",
-      prompt: "Kask rowerowy w cenie brutto kosztuje 184,50 zł (VAT 23%). Oblicz cenę netto (bez VAT).",
+      prompt: "Kask rowerowy w cenie brutto kosztuje 184,50 zł (VAT 23%). Oblicz cenę netto.",
       fields: [{ label: "netto", unit: "zł", value: 150, tol: 0.5 }],
-      hint: buildHint(
-        "brutto = 184,50 zł, VAT = 23%",
-        "cena netto (bez VAT)",
-        "brutto = netto · (1 + VAT/100)  →  netto = brutto / (1 + VAT/100)",
-        "netto = 184,50 / 1,23"
+      hint: hint(
+        "Cena brutto = netto + 23% VAT. Czyli brutto = netto · 1,23 (bo 100% netto + 23% to 123% = 1,23 razy netto). Żeby znaleźć netto, dzielimy brutto przez 1,23.",
+        [
+          "Cena brutto to 123% ceny netto (100% + 23% VAT).",
+          "Podziel brutto przez 1,23: 184,50 ÷ 1,23 = ?"
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "brutto = 184,50 zł; VAT = 23%",
         "cena netto",
-        "brutto = netto · (1 + VAT/100)",
-        "netto = brutto / (1 + VAT/100)",
-        "netto = 184,50 / 1,23",
-        "= 150",
+        [
+          "Brutto jest 1,23 razy większe niż netto (netto + 23% = 123% netto)",
+          "Netto = brutto ÷ 1,23 = 184,50 ÷ 1,23 = 150 zł"
+        ],
         "150 zł"
       )
     },
     {
       id: "f5",
       prompt: "Oferta I: cena netto 2400 zł + 23% VAT. Oferta II: 2870 zł brutto. Która jest TAŃSZA i o ile zł?",
-      fields: [
-        { label: "różnica", unit: "zł", value: 82, tol: 0.5 }
-      ],
-      hint: buildHint(
-        "Oferta I: netto 2400 zł, VAT 23%. Oferta II: brutto 2870 zł",
-        "która tańsza i o ile",
-        "Sprowadź obie do porównywalnej wielkości — brutto",
-        "I_brutto = 2400 · 1,23 = 2952; II_brutto = 2870; różnica = 2952 − 2870"
+      fields: [{ label: "różnica", unit: "zł", value: 82, tol: 0.5 }],
+      hint: hint(
+        "Żeby porównać oferty, trzeba mieć obie w tej samej formie. Najprościej zamienić ofertę I na brutto (dodać VAT) i porównać.",
+        [
+          "Policz brutto oferty I: 2400 zł + 23% VAT.",
+          "23% z 2400 = 0,23 · 2400 = 552 zł. Brutto I = 2400 + 552 = 2952 zł.",
+          "Porównaj: oferta II to 2870 zł. Różnica = 2952 − 2870."
+        ]
       ),
-      solution: buildSolution(
-        "I: 2400 zł netto + 23% VAT;  II: 2870 zł brutto",
-        "która tańsza i o ile zł",
-        "Liczymy oba brutto i porównujemy",
-        null,
-        "I_brutto = 2400 · 1,23 = 2952 zł;  II_brutto = 2870 zł",
-        "różnica = 2952 − 2870 = 82",
+      solution: sol(
+        "I: 2400 netto + 23% VAT; II: 2870 brutto",
+        "która tańsza i o ile",
+        [
+          "Brutto I: 23% z 2400 = 552. Brutto I = 2400 + 552 = 2952 zł",
+          "Porównuję: I = 2952 zł, II = 2870 zł",
+          "Różnica: 2952 − 2870 = 82 zł — II jest tańsza"
+        ],
         "Oferta II tańsza o 82 zł"
       )
     },
     {
       id: "f6",
-      prompt: "Cenę kurtki obniżono o 15% i obecnie wynosi 306 zł. Ile kosztowała kurtka przed obniżką?",
+      prompt: "Cenę kurtki obniżono o 15% i teraz wynosi 306 zł. Ile kosztowała kurtka PRZED obniżką?",
       fields: [{ label: "cena", unit: "zł", value: 360, tol: 0.5 }],
-      hint: buildHint(
-        "cena_po = 306 zł, obniżka 15% (czyli zostało 85% ceny)",
-        "cena przed obniżką",
-        "cena_po = cena · (1 − p/100)  →  cena = cena_po / (1 − p/100)",
-        "cena = 306 / 0,85"
+      hint: hint(
+        "Po obniżce o 15% zostało 100% − 15% = 85% starej ceny. Czyli 306 zł to 85% starej ceny.",
+        [
+          "85% starej ceny = 306 zł.",
+          "1% starej ceny: 306 ÷ 85 = ?",
+          "100% (cała stara cena): wynik · 100."
+        ]
       ),
-      solution: buildSolution(
-        "cena_po = 306 zł; obniżka p = 15%",
+      solution: sol(
+        "cena po obniżce = 306 zł; obniżka 15%",
         "cena przed obniżką",
-        "cena_po = cena · (1 − p/100)",
-        "cena = cena_po / (1 − p/100)",
-        "cena = 306 / (1 − 0,15) = 306 / 0,85",
-        "= 360",
-        "360 zł"
+        [
+          "Po obniżce zostało 100% − 15% = 85%. Czyli 85% starej ceny = 306 zł",
+          "1% starej ceny: 306 ÷ 85 = 3,60 zł",
+          "100% starej ceny: 3,60 · 100 = 360 zł"
+        ],
+        "360 zł (przed obniżką)"
       )
     },
     {
       id: "f7",
-      prompt: "Pan Jan wpłacił na lokatę roczną 5000 zł i otrzymał 90 zł odsetek. Oprocentowanie zmalało o 0,5 punktu procentowego. Jakie odsetki dostanie po roku z 5000 zł teraz?",
+      prompt: "Pan Jan wpłacił na lokatę 5000 zł i dostał 90 zł odsetek. W tym roku oprocentowanie zmalało o 0,5 punktu procentowego. Jakie odsetki dostanie od 5000 zł teraz?",
       fields: [{ label: "odsetki", unit: "zł", value: 65, tol: 0.5 }],
-      hint: buildHint(
-        "Stara stawka: 5000 zł → 90 zł odsetek. Nowa stawka mniejsza o 0,5 punktu",
-        "nowe odsetki",
-        "Krok 1: stara stawka r1 = 90/5000 · 100% = 1,8%. Krok 2: r2 = 1,8% − 0,5% = 1,3%. Krok 3: odsetki = 5000 · 1,3/100",
-        "Pamiętaj: PUNKT procentowy ≠ procent. Z 1,8% odejmujemy 0,5 punktu → 1,3%"
+      hint: hint(
+        "Najpierw policz jakie było stare oprocentowanie z 90 zł odsetek od 5000 zł. Potem odejmij 0,5 (UWAGA: punkty procentowe odejmuje się BEZPOŚREDNIO od procentu — z 1,8% odjąć 0,5 daje 1,3%). Potem nowe odsetki.",
+        [
+          "Stare oprocentowanie: ile procent z 5000 zł to 90? 90 ÷ 5000 = 0,018 = 1,8%.",
+          "Nowe oprocentowanie: 1,8% − 0,5 punktu = 1,3%.",
+          "Nowe odsetki: 1,3% z 5000 zł = 0,013 · 5000 = 65 zł."
+        ]
       ),
-      solution: buildSolution(
-        "K0 = 5000 zł; stare odsetki = 90 zł; nowa stawka mniejsza o 0,5 pp",
+      solution: sol(
+        "5000 zł, stare odsetki = 90 zł; nowa stawka mniejsza o 0,5 punktu",
         "nowe odsetki",
-        "Krok 1: r1 = odsetki/K0 · 100%.  Krok 2: r2 = r1 − 0,5 pp.  Krok 3: odsetki = K0 · r2/100",
-        null,
-        "r1 = 90/5000 · 100% = 1,8%;  r2 = 1,8% − 0,5% = 1,3%;  odsetki = 5000 · 1,3/100",
-        "= 65",
+        [
+          "Stara stawka: 90 ÷ 5000 = 0,018 = 1,8%",
+          "Nowa stawka: 1,8% − 0,5% = 1,3% (odejmujemy punkty procentowe BEZPOŚREDNIO)",
+          "Nowe odsetki: 1,3% z 5000 = 0,013 · 5000 = 65 zł"
+        ],
         "65 zł"
       )
     },
     {
       id: "f8",
-      prompt: "W pewnym państwie wszyscy płacą tę samą stawkę podatku. Od kwoty 7000 groszy trzeba przekazać 840 groszy. Jaki to procent dochodu?",
+      prompt: "Od kwoty 7000 groszy trzeba przekazać do skarbu państwa 840 groszy podatku. Jaki to procent dochodów?",
       fields: [{ label: "stawka", unit: "%", value: 12, tol: 0.5 }],
-      hint: buildHint(
-        "dochód = 7000 gr, podatek = 840 gr",
-        "stawka podatku w %",
-        "p = podatek/dochód · 100%",
-        "p = 840/7000 · 100%"
+      hint: hint(
+        "Pytamy: jakim procentem 7000 jest 840. Czyli najpierw 840 ÷ 7000, a potem razy 100%.",
+        [
+          "Podziel: 840 ÷ 7000 = ?",
+          "Pomnóż wynik razy 100%."
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "dochód = 7000 gr; podatek = 840 gr",
         "stawka podatku",
-        "p = podatek/dochód · 100%",
-        null,
-        "p = 840/7000 · 100%",
-        "= 0,12 · 100% = 12%",
+        [
+          "Dzielę: 840 ÷ 7000 = 0,12",
+          "Zamieniam na %: 0,12 · 100% = 12%"
+        ],
         "12%"
       )
     },
     {
       id: "f9",
-      prompt: "Wynagrodzenie BRUTTO pracownika wynosi 3700 zł. Podatek to 18% od kwoty brutto. Ile wynosi wynagrodzenie netto?",
+      prompt: "Wynagrodzenie BRUTTO pracownika to 3700 zł. Podatek wynosi 18% kwoty brutto. Ile to wynagrodzenie NETTO?",
       fields: [{ label: "netto", unit: "zł", value: 3034, tol: 0.5 }],
-      hint: buildHint(
-        "brutto = 3700 zł, podatek 18% z brutto",
-        "wynagrodzenie netto",
-        "netto = brutto − brutto · (p/100) = brutto · (1 − p/100)",
-        "netto = 3700 · 0,82"
+      hint: hint(
+        "Netto = brutto − podatek. Trzeba policzyć ile to 18% z 3700 zł (podatek) i odjąć.",
+        [
+          "Policz 18% z 3700: 0,18 · 3700 = ? (to podatek)",
+          "Odejmij podatek od brutto: 3700 − podatek"
+        ]
       ),
-      solution: buildSolution(
-        "brutto = 3700 zł; podatek p = 18%",
+      solution: sol(
+        "brutto = 3700 zł; podatek = 18%",
         "netto",
-        "netto = brutto · (1 − p/100)",
-        null,
-        "netto = 3700 · (1 − 0,18) = 3700 · 0,82",
-        "= 3034",
+        [
+          "18% z 3700: 0,18 · 3700 = 666 zł (to podatek)",
+          "Netto = brutto − podatek = 3700 − 666 = 3034 zł"
+        ],
         "3034 zł"
       )
     },
@@ -560,19 +654,20 @@
       id: "f10",
       prompt: "Cena BRUTTO słoika miodu wynosi 27,30 zł. Stawka VAT na miód to 5%. Ile wynosi cena netto?",
       fields: [{ label: "netto", unit: "zł", value: 26, tol: 0.5 }],
-      hint: buildHint(
-        "brutto = 27,30 zł, VAT = 5%",
-        "cena netto",
-        "netto = brutto / (1 + VAT/100)",
-        "netto = 27,30 / 1,05"
+      hint: hint(
+        "Brutto = 105% netto (100% netto + 5% VAT). Żeby znaleźć netto, dzielimy brutto przez 1,05.",
+        [
+          "Brutto jest 1,05 razy większe niż netto.",
+          "Netto = 27,30 ÷ 1,05 = ?"
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "brutto = 27,30 zł; VAT = 5%",
         "netto",
-        "netto = brutto / (1 + VAT/100)",
-        null,
-        "netto = 27,30 / 1,05",
-        "= 26",
+        [
+          "Brutto jest 105% (czyli 1,05 raza) netto",
+          "Netto = 27,30 ÷ 1,05 = 26 zł"
+        ],
         "26 zł"
       )
     }
@@ -581,56 +676,83 @@
   function financeGen() {
     const t = rand(1, 4);
     if (t === 1) {
-      // Lokata 1 rok
-      const K = pick([1000, 2000, 3000, 4000, 5000, 8000, 10000]);
+      const K = pick([1000, 2000, 3000, 5000, 8000, 10000]);
       const r = pick([1, 1.5, 2, 2.5, 3, 4, 5]);
-      const v = M.depositAfter(K, r, 1);
+      const odsetki = M.percentOf(r, K);
+      const v = K + odsetki;
       return {
         id: `fg1-${K}-${r}`,
-        prompt: `Wpłacono ${K} zł na lokatę roczną o oprocentowaniu ${fmt(r)}%. Ile wyniesie stan konta po roku?`,
+        prompt: `Wpłacono ${K} zł na lokatę roczną o oprocentowaniu ${fmt(r)}%. Ile będzie na koncie po roku?`,
         fields: [{ label: "stan", unit: "zł", value: v, tol: 0.5 }],
-        hint: buildHint(`K0 = ${K} zł; r = ${fmt(r)}%; t = 1 rok`, "K po roku", "K = K0 · (1 + r/100)", `K = ${K} · ${1+r/100}`),
-        solution: buildSolution(`K0 = ${K} zł; r = ${fmt(r)}%`, "K po roku", "K = K0 · (1 + r/100)", null,
-          `${K} · (1 + ${fmt(r)}/100) = ${K} · ${1+r/100}`, `= ${fmtMon(v)}`, `${fmtMon(v)} zł`)
+        hint: hint(
+          `Bank doda ${fmt(r)}% odsetek do włożonej kwoty.`,
+          [`Policz ${fmt(r)}% z ${K} zł (zamień ${fmt(r)}% na ${r/100} i pomnóż)`, `Dodaj odsetki do ${K} zł`]
+        ),
+        solution: sol(
+          `${K} zł na ${fmt(r)}% rocznie`,
+          `stan po roku`,
+          [`${fmt(r)}% z ${K}: ${r/100} · ${K} = ${fmt(odsetki)} zł odsetek`, `Stan: ${K} + ${fmt(odsetki)} = ${fmt(v)} zł`],
+          `${fmtMon(v)} zł`
+        )
       };
     }
     if (t === 2) {
-      // VAT brutto z netto
-      const netto = pick([100, 200, 500, 800, 1000, 1500, 2000, 2500]); const vat = pick([5, 8, 23]);
-      const brutto = M.priceBrutto(netto, vat);
+      const netto = pick([100, 200, 500, 800, 1000, 1500, 2000]); const vat = pick([5, 8, 23]);
+      const vatKwota = M.vatAmount(netto, vat);
+      const brutto = netto + vatKwota;
       return {
         id: `fg2-${netto}-${vat}`,
-        prompt: `Cena netto towaru wynosi ${netto} zł, stawka VAT to ${vat}%. Ile wynosi cena brutto?`,
+        prompt: `Cena netto = ${netto} zł, VAT = ${vat}%. Oblicz cenę brutto.`,
         fields: [{ label: "brutto", unit: "zł", value: brutto, tol: 0.5 }],
-        hint: buildHint(`netto = ${netto} zł; VAT = ${vat}%`, "brutto", "brutto = netto · (1 + VAT/100)", `brutto = ${netto} · ${1+vat/100}`),
-        solution: buildSolution(`netto = ${netto} zł; VAT = ${vat}%`, "brutto", "brutto = netto · (1 + VAT/100)", null,
-          `${netto} · (1 + ${vat}/100) = ${netto} · ${1+vat/100}`, `= ${fmtMon(brutto)}`, `${fmtMon(brutto)} zł`)
+        hint: hint(
+          `Brutto = netto + VAT. Trzeba policzyć ${vat}% z ${netto} zł i dodać.`,
+          [`Policz ${vat}% z ${netto}: ${vat/100} · ${netto} = ?`, `Dodaj VAT do ${netto} zł`]
+        ),
+        solution: sol(
+          `netto = ${netto} zł; VAT = ${vat}%`,
+          `brutto`,
+          [`${vat}% z ${netto}: ${vat/100} · ${netto} = ${fmt(vatKwota)} zł (VAT)`, `Brutto = ${netto} + ${fmt(vatKwota)} = ${fmt(brutto)} zł`],
+          `${fmtMon(brutto)} zł`
+        )
       };
     }
     if (t === 3) {
-      // VAT netto z brutto
       const netto = pick([100, 200, 400, 500, 1000, 2000]); const vat = pick([5, 8, 23]);
-      const brutto = M.priceBrutto(netto, vat);
+      const brutto = netto + M.vatAmount(netto, vat);
       return {
         id: `fg3-${brutto}-${vat}`,
-        prompt: `Cena brutto wynosi ${fmtMon(brutto)} zł (VAT ${vat}%). Ile wynosi cena netto?`,
+        prompt: `Cena brutto = ${fmtMon(brutto)} zł (VAT ${vat}%). Oblicz cenę netto.`,
         fields: [{ label: "netto", unit: "zł", value: netto, tol: 0.5 }],
-        hint: buildHint(`brutto = ${fmtMon(brutto)} zł; VAT = ${vat}%`, "netto", "brutto = netto · (1 + VAT/100)", `netto = brutto / (1 + VAT/100) = ${fmtMon(brutto)} / ${1+vat/100}`),
-        solution: buildSolution(`brutto = ${fmtMon(brutto)} zł; VAT = ${vat}%`, "netto", "brutto = netto · (1 + VAT/100)", "netto = brutto / (1 + VAT/100)",
-          `${fmtMon(brutto)} / ${1+vat/100}`, `= ${fmtMon(netto)}`, `${fmtMon(netto)} zł`)
+        hint: hint(
+          `Brutto jest większe od netto o ${vat}% (to VAT). Czyli brutto = ${1+vat/100} razy netto.`,
+          [`Podziel brutto przez ${1+vat/100}: ${fmtMon(brutto)} ÷ ${1+vat/100} = ?`]
+        ),
+        solution: sol(
+          `brutto = ${fmtMon(brutto)} zł; VAT = ${vat}%`,
+          `netto`,
+          [`Brutto to ${100+vat}% (czyli ${1+vat/100} raza) netto`, `Netto = ${fmtMon(brutto)} ÷ ${1+vat/100} = ${fmtMon(netto)} zł`],
+          `${fmtMon(netto)} zł`
+        )
       };
     }
-    // t == 4: cena po obniżce
     const cena = pick([100, 200, 300, 500, 800, 1000, 1500, 2000]);
-    const p = pick([5, 10, 15, 20, 25, 30, 40, 50]);
-    const cenaPo = M.decrPct(cena, p);
+    const p = pick([10, 15, 20, 25, 30, 40, 50]);
+    const obnizka = M.percentOf(p, cena);
+    const cenaPo = cena - obnizka;
     return {
       id: `fg4-${cena}-${p}`,
-      prompt: `Towar kosztował ${cena} zł i został przeceniony o ${p}%. Ile kosztuje po przecenie?`,
+      prompt: `Towar kosztował ${cena} zł i został przeceniony o ${p}%. Ile kosztuje teraz?`,
       fields: [{ label: "cena", unit: "zł", value: cenaPo, tol: 0.5 }],
-      hint: buildHint(`cena = ${cena} zł; obniżka ${p}%`, "cena po obniżce", "cena_po = cena · (1 − p/100)", `cena_po = ${cena} · ${1-p/100}`),
-      solution: buildSolution(`cena = ${cena} zł; p = ${p}%`, "cena po obniżce", "cena_po = cena · (1 − p/100)", null,
-        `${cena} · (1 − ${p}/100) = ${cena} · ${1-p/100}`, `= ${fmtMon(cenaPo)}`, `${fmtMon(cenaPo)} zł`)
+      hint: hint(
+        `Cena spada o ${p}%. Policz ile zł to ${p}% z ${cena} i odejmij.`,
+        [`Policz ${p}% z ${cena}: ${p/100} · ${cena} = ? (tyle odpada)`, `Odejmij od ${cena} zł`]
+      ),
+      solution: sol(
+        `cena = ${cena} zł; obniżka ${p}%`,
+        `nowa cena`,
+        [`${p}% z ${cena}: ${p/100} · ${cena} = ${fmt(obnizka)} zł (tyle odpada)`, `Nowa cena: ${cena} − ${fmt(obnizka)} = ${fmt(cenaPo)} zł`],
+        `${fmtMon(cenaPo)} zł`
+      )
     };
   }
 
@@ -643,63 +765,70 @@
         { label: "mniejsza", unit: "cm", value: 60, tol: 0.5 },
         { label: "większa",  unit: "cm", value: 120, tol: 0.5 }
       ],
-      hint: buildHint(
-        "całkowita długość = 180 cm, stosunek 1:2 (suma części = 1 + 2 = 3)",
-        "obie długości",
-        "część_i = total · ratio_i / suma_ratio",
-        "Liczymy 1/3 i 2/3 z 180"
+      hint: hint(
+        "Stosunek 1:2 znaczy że dzielimy na CZĘŚCI — pierwszą i drugą, gdzie druga jest 2 razy dłuższa. Razem to 1+2 = 3 części. Trzeba znaleźć ile to 1 część.",
+        [
+          "Suma części: 1 + 2 = 3.",
+          "1 część = 180 ÷ 3 = 60 cm.",
+          "Mniejsza (1 część) = 60 cm. Większa (2 części) = 120 cm."
+        ]
       ),
-      solution: buildSolution(
-        "L = 180 cm; stosunek 1:2",
-        "części",
-        "część_i = L · ratio_i / Σratio",
-        null,
-        "suma = 1+2 = 3.  mniejsza = 180 · 1/3,  większa = 180 · 2/3",
-        "mniejsza = 60, większa = 120",
+      solution: sol(
+        "tasiemka 180 cm; stosunek 1:2",
+        "obie długości",
+        [
+          "Razem to 1 + 2 = 3 części",
+          "1 część: 180 ÷ 3 = 60 cm",
+          "Mniejsza = 1 część = 60 cm. Większa = 2 części = 2 · 60 = 120 cm"
+        ],
         "60 cm i 120 cm"
       )
     },
     {
       id: "r2",
-      prompt: "Płot pomalowali Antek (3 m), Bartek (5 m) i Czarek (4 m). Razem dostali 240 zł. Ile dostanie każdy proporcjonalnie do pracy? (kolejność: Antek, Bartek, Czarek)",
+      prompt: "Płot pomalowali Antek (3 m), Bartek (5 m) i Czarek (4 m). Razem dostali 240 zł. Ile dostanie każdy proporcjonalnie do pracy? (Antek, Bartek, Czarek)",
       fields: [
         { label: "Antek",  unit: "zł", value: 60, tol: 0.5 },
         { label: "Bartek", unit: "zł", value: 100, tol: 0.5 },
         { label: "Czarek", unit: "zł", value: 80, tol: 0.5 }
       ],
-      hint: buildHint(
-        "Praca w stosunku 3:5:4 (Antek:Bartek:Czarek), razem 240 zł",
-        "podział",
-        "część_i = total · ratio_i / Σratio",
-        "Suma = 3+5+4 = 12. Każdy: 240 · ratio_i / 12 = 20 · ratio_i"
+      hint: hint(
+        "Praca w stosunku 3:5:4. Razem to 3+5+4 = 12 części. Trzeba znaleźć ile zł = 1 część, potem każdy dostaje swoją liczbę części.",
+        [
+          "Suma metrów: 3 + 5 + 4 = 12 m (to 12 części).",
+          "1 część (1 m pracy) = 240 ÷ 12 = 20 zł.",
+          "Antek (3 m) = 3 · 20 = 60 zł. Bartek (5 m) = 5 · 20 = 100 zł. Czarek (4 m) = 4 · 20 = 80 zł."
+        ]
       ),
-      solution: buildSolution(
-        "praca = 3:5:4 m; razem = 240 zł",
+      solution: sol(
+        "Antek 3 m, Bartek 5 m, Czarek 4 m; razem 240 zł",
         "kwota dla każdego",
-        "część_i = total · ratio_i / Σratio",
-        null,
-        "Σ = 12.  A = 240·3/12 = 60.  B = 240·5/12 = 100.  C = 240·4/12 = 80",
-        "60, 100, 80",
-        "Antek 60 zł; Bartek 100 zł; Czarek 80 zł"
+        [
+          "Razem pracy: 3 + 5 + 4 = 12 m",
+          "1 m pracy: 240 ÷ 12 = 20 zł",
+          "Antek: 3 · 20 = 60. Bartek: 5 · 20 = 100. Czarek: 4 · 20 = 80"
+        ],
+        "Antek 60 zł, Bartek 100 zł, Czarek 80 zł"
       )
     },
     {
       id: "r3",
-      prompt: "Pewien ciężar podzielono w stosunku 2:3. Lżejsza część waży 24 kg. Ile waży druga część?",
+      prompt: "Ciężar podzielono w stosunku 2:3. Lżejsza część waży 24 kg. Ile waży druga?",
       fields: [{ label: "druga", unit: "kg", value: 36, tol: 0.5 }],
-      hint: buildHint(
-        "stosunek 2:3, lżejsza = 24 kg (część 2)",
-        "cięższa część (część 3)",
-        "Wagi proporcjonalne: druga = lżejsza · 3/2",
-        "druga = 24 · 3/2 = 36"
+      hint: hint(
+        "Stosunek 2:3 znaczy: na każde 2 kg lżejszej przypadają 3 kg cięższej. Skoro lżejsza waży 24 kg (= 12 razy po 2 kg), to cięższa będzie miała 12 razy po 3 kg.",
+        [
+          "1 część stosunku: 24 ÷ 2 = 12 kg.",
+          "Cięższa to 3 części: 3 · 12 = 36 kg."
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "stosunek 2:3; lżejsza = 24 kg",
         "cięższa część",
-        "obie wagi proporcjonalne do liczb stosunku",
-        "druga = lżejsza · 3 / 2",
-        "druga = 24 · 3 / 2",
-        "= 24 · 1,5 = 36",
+        [
+          "Lżejsza ma 2 części stosunku = 24 kg, więc 1 część = 24 ÷ 2 = 12 kg",
+          "Cięższa to 3 części: 3 · 12 = 36 kg"
+        ],
         "36 kg"
       )
     },
@@ -707,82 +836,93 @@
       id: "r4",
       prompt: "Liczbę 880 podzielono w stosunku 3:8. Oblicz różnicę między większą a mniejszą częścią.",
       fields: [{ label: "różnica", unit: "", value: 400, tol: 0.5 }],
-      hint: buildHint(
-        "total = 880, stosunek 3:8",
-        "różnica większa − mniejsza",
-        "Każda część: total · ratio_i / Σratio. Σ = 3+8 = 11.  Różnica: 880·8/11 − 880·3/11 = 880·5/11",
-        "Najprościej: różnica = total · (większa−mniejsza)/Σ = 880 · 5/11"
+      hint: hint(
+        "Stosunek 3:8 = 3 części + 8 części = 11 części razem. Trzeba znaleźć obie, potem odjąć.",
+        [
+          "Razem części: 3 + 8 = 11.",
+          "1 część: 880 ÷ 11 = 80.",
+          "Mniejsza = 3 · 80 = 240. Większa = 8 · 80 = 640.",
+          "Różnica = 640 − 240 = 400."
+        ]
       ),
-      solution: buildSolution(
-        "total = 880; stosunek 3:8",
+      solution: sol(
+        "880 podzielone w stosunku 3:8",
         "różnica między częściami",
-        "każda część = total · ratio/Σ",
-        null,
-        "Σ = 11.  mniejsza = 880·3/11 = 240.  większa = 880·8/11 = 640",
-        "różnica = 640 − 240 = 400",
+        [
+          "Razem: 3 + 8 = 11 części",
+          "1 część: 880 ÷ 11 = 80",
+          "Mniejsza: 3 · 80 = 240. Większa: 8 · 80 = 640",
+          "Różnica: 640 − 240 = 400"
+        ],
         "400"
       )
     },
     {
       id: "r5",
-      prompt: "Sok i wodę zmieszano w PROPORCJI 2:3. Co to oznacza? Wybierz poprawne ilości (sok, woda).",
+      prompt: "Sok i wodę zmieszano w PROPORCJI 2:3. Co to znaczy? Wybierz ilości (sok, woda).",
       fields: [
         { label: "sok",  unit: "L", value: 2, tol: 0.05 },
         { label: "woda", unit: "L", value: 3, tol: 0.05 }
       ],
-      hint: buildHint(
-        "Proporcja 2:3 oznacza że na 2 części soku przypadają 3 części wody",
-        "konkretne ilości",
-        "Najmniejsze ilości (1 część = 1 L): 2 L soku i 3 L wody",
-        "Można też 4 L i 6 L (każda część = 2 L) — to też proporcja 2:3"
+      hint: hint(
+        "Proporcja 2:3 znaczy: na każde 2 jednostki soku przypadają 3 jednostki wody. Najprościej wziąć 2 L soku i 3 L wody.",
+        [
+          "Najprostsze rozumienie: 2 części soku i 3 części wody.",
+          "Jeśli 1 część = 1 L, to: 2 L soku i 3 L wody."
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "proporcja 2:3 (sok:woda)",
         "konkretne ilości",
-        "Stosunek 2:3 oznacza że na 2 jednostki soku przypadają 3 jednostki wody",
-        null,
-        "Najprościej: 2 L soku i 3 L wody (1 jednostka = 1 L)",
-        "Inne poprawne: 4:6, 6:9, 10:15…",
+        [
+          "Proporcja 2:3 to: 2 jednostki soku na każde 3 jednostki wody",
+          "Najprościej (1 jednostka = 1 L): 2 L soku i 3 L wody",
+          "Inne poprawne: 4 L i 6 L, 6 L i 9 L (te same proporcje)"
+        ],
         "2 L soku i 3 L wody (lub wielokrotności)"
       )
     },
     {
       id: "r6",
-      prompt: "Ewa dolała wody do 0,5 L soku i otrzymała 0,7 L napoju. Jaki jest stosunek SOKU do WODY w napoju? Podaj jako liczby a:b w prostej postaci (a/b).",
-      fields: [{ label: "stosunek (sok/woda)", unit: "", value: 5/2, tol: 0.05 }],
-      hint: buildHint(
-        "sok = 0,5 L, napój = 0,7 L → woda = 0,7 − 0,5 = 0,2 L",
-        "stosunek sok:woda",
-        "Stosunek = sok / woda",
-        "0,5 / 0,2 = 5/2 (czyli 5:2)"
+      prompt: "Ewa dolała wody do 0,5 L soku i otrzymała 0,7 L napoju. Jaki jest stosunek SOKU do WODY w napoju? Podaj liczbę dziesiętną (sok/woda).",
+      fields: [{ label: "stosunek sok/woda", unit: "", value: 5/2, tol: 0.05 }],
+      hint: hint(
+        "Najpierw musisz wiedzieć ile wody dolała. Jeśli napój ma 0,7 L a był 0,5 L soku, to wody jest 0,7 − 0,5. Potem stosunek = sok podzielić przez wodę.",
+        [
+          "Policz ile dolała wody: 0,7 − 0,5 = ?",
+          "Stosunek sok/woda = 0,5 podzielić przez to co policzyłeś."
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "sok = 0,5 L; napój = 0,7 L",
         "stosunek sok:woda",
-        "Stosunek = sok / woda",
-        "Najpierw woda = napój − sok",
-        "woda = 0,7 − 0,5 = 0,2 L;  stosunek = 0,5 / 0,2",
-        "= 5/2 (czyli 5:2)",
-        "5:2 (5/2 = 2,5)"
+        [
+          "Ile wody dolała: 0,7 − 0,5 = 0,2 L wody",
+          "Stosunek: sok/woda = 0,5 / 0,2 = 2,5 = 5/2",
+          "Czyli 5:2 — na 5 L soku przypadają 2 L wody"
+        ],
+        "5:2 (czyli 2,5)"
       )
     },
     {
       id: "r7",
       prompt: "Ile soli trzeba dodać do 18 kg WODY, aby otrzymać roztwór 10-procentowy?",
       fields: [{ label: "sól", unit: "kg", value: 2, tol: 0.05 }],
-      hint: buildHint(
-        "woda = 18 kg, p = 10% (sól w roztworze)",
-        "masa soli",
-        "p% = sól/(sól+woda) · 100%  →  s = p · woda / (100 − p)",
-        "s = 10 · 18 / 90"
+      hint: hint(
+        "10% roztwór znaczy że sól stanowi 10% całego roztworu (sól + woda). Czyli na 10 jednostek roztworu jest 1 jednostka soli i 9 jednostek wody. Proporcja sól:woda = 1:9.",
+        [
+          "Proporcja sól:woda = 1:9 (1 kg soli na 9 kg wody).",
+          "Skoro mamy 18 kg wody = 2 razy więcej niż 9, to soli będzie 2 razy więcej niż 1 kg.",
+          "Sól = 2 kg."
+        ]
       ),
-      solution: buildSolution(
-        "woda = 18 kg; p = 10%",
+      solution: sol(
+        "woda = 18 kg; roztwór 10% (sól w roztworze)",
         "masa soli",
-        "p/100 = s / (s + woda)",
-        "s = p · woda / (100 − p)",
-        "s = 10 · 18 / (100 − 10) = 180/90",
-        "= 2",
+        [
+          "10% roztwór = 1 część soli + 9 części wody (proporcja sól:woda = 1:9)",
+          "Mamy 18 kg wody = 9 · 2, więc soli będzie 1 · 2 = 2 kg"
+        ],
         "2 kg soli"
       )
     },
@@ -793,19 +933,20 @@
         { label: "cukier", unit: "kg", value: 0.5, tol: 0.05 },
         { label: "woda",   unit: "kg", value: 9.5, tol: 0.05 }
       ],
-      hint: buildHint(
-        "całość = 10 kg, p = 5% cukru",
-        "ile cukru i wody",
-        "cukier = (p/100) · całość;  woda = całość − cukier",
-        "cukier = 0,05 · 10 = 0,5;  woda = 10 − 0,5"
+      hint: hint(
+        "Cały roztwór ma być 10 kg i 5% to ma być cukier. Czyli najpierw liczymy ile to jest 5% z 10 kg, a reszta to woda.",
+        [
+          "Policz 5% z 10 kg: 0,05 · 10 = ? (to cukier)",
+          "Woda = 10 kg − cukier"
+        ]
       ),
-      solution: buildSolution(
-        "całość = 10 kg; p = 5% cukru",
-        "cukier i woda",
-        "cukier = (p/100) · całość",
-        null,
-        "cukier = 5/100 · 10 = 0,5 kg;  woda = 10 − 0,5",
-        "woda = 9,5 kg",
+      solution: sol(
+        "razem = 10 kg; cukier ma być 5%",
+        "ile cukru i wody",
+        [
+          "5% z 10 kg: 0,05 · 10 = 0,5 kg cukru",
+          "Woda = 10 − 0,5 = 9,5 kg"
+        ],
         "0,5 kg cukru i 9,5 kg wody"
       )
     },
@@ -816,19 +957,22 @@
         { label: "środkowa", unit: "ml", value: 330, tol: 1 },
         { label: "największa", unit: "ml", value: 550, tol: 1 }
       ],
-      hint: buildHint(
-        "stosunek 2:3:5; najmniejsza = 220 ml = 2 części",
-        "obie pozostałe",
-        "1 część = 220/2 = 110 ml.  Środkowa = 3·110;  największa = 5·110",
-        "Albo proporcjonalnie: środkowa/najmniejsza = 3/2"
+      hint: hint(
+        "Najmniejsza szklanka to 2 części (najmniejsza liczba w stosunku). Trzeba znaleźć ile to 1 część, potem pomnożyć przez 3 i 5.",
+        [
+          "Najmniejsza = 2 części = 220 ml, więc 1 część = 220 ÷ 2 = 110 ml.",
+          "Środkowa = 3 części = 3 · 110 = 330 ml.",
+          "Największa = 5 części = 5 · 110 = 550 ml."
+        ]
       ),
-      solution: buildSolution(
-        "stosunek 2:3:5; najmniejsza = 220 ml (2 części)",
+      solution: sol(
+        "stosunek 2:3:5; najmniejsza = 220 ml",
         "środkowa i największa",
-        "1 część = najmniejsza / 2",
-        "Każda część = 220 / 2 = 110 ml",
-        "środkowa = 3 · 110;  największa = 5 · 110",
-        "= 330 ml i 550 ml",
+        [
+          "Najmniejsza ma 2 części = 220 ml, więc 1 część = 220 ÷ 2 = 110 ml",
+          "Środkowa (3 części): 3 · 110 = 330 ml",
+          "Największa (5 części): 5 · 110 = 550 ml"
+        ],
         "330 ml i 550 ml"
       )
     },
@@ -839,19 +983,22 @@
         { label: "mniejszy", unit: "L", value: 8, tol: 0.05 },
         { label: "większy",  unit: "L", value: 12, tol: 0.05 }
       ],
-      hint: buildHint(
-        "total = 20 L, stosunek 2:3",
-        "obie ilości",
-        "część_i = total · ratio_i / Σratio",
-        "Σ = 5.  mniejszy = 20 · 2/5;  większy = 20 · 3/5"
+      hint: hint(
+        "Stosunek 2:3 to razem 2+3 = 5 części. Znajdź ile to jest 1 część, potem pomnóż.",
+        [
+          "Razem: 2 + 3 = 5 części.",
+          "1 część = 20 ÷ 5 = 4 L.",
+          "Mniejszy (2 części) = 2 · 4 = 8 L. Większy (3 części) = 3 · 4 = 12 L."
+        ]
       ),
-      solution: buildSolution(
-        "total = 20 L; stosunek 2:3",
+      solution: sol(
+        "20 L; stosunek 2:3",
         "obie ilości",
-        "część_i = total · ratio_i / Σratio",
-        null,
-        "Σ = 2+3 = 5.  mniejszy = 20 · 2/5 = 8;  większy = 20 · 3/5 = 12",
-        "= 8 L i 12 L",
+        [
+          "Razem: 2 + 3 = 5 części",
+          "1 część: 20 ÷ 5 = 4 L",
+          "Mniejszy: 2 · 4 = 8 L. Większy: 3 · 4 = 12 L"
+        ],
         "8 L i 12 L"
       )
     }
@@ -860,68 +1007,90 @@
   function ratioGen() {
     const t = rand(1, 4);
     if (t === 1) {
-      // Podział total w stosunku a:b
-      const a = pick([1, 2, 3, 4, 5]); const b = pick([1, 2, 3, 4, 5, 7]);
+      const a = pick([1, 2, 3, 4]); const b = pick([2, 3, 4, 5, 7]);
       const sum = a + b; const total = sum * pick([4, 5, 6, 8, 10, 20]);
       const r = M.ratioSplit2(total, a, b);
+      const part = total / sum;
       return {
         id: `rg1-${total}-${a}-${b}`,
-        prompt: `Podziel ${total} w stosunku ${a}:${b}. Podaj obie części (pierwszą i drugą).`,
+        prompt: `Podziel ${total} w stosunku ${a}:${b}. Podaj obie części.`,
         fields: [
           { label: `${a} cz.`, unit: "", value: r.first, tol: 0.05 },
           { label: `${b} cz.`, unit: "", value: r.second, tol: 0.05 }
         ],
-        hint: buildHint(`total = ${total}, stosunek ${a}:${b}`, "obie części", "część = total · ratio/Σratio", `Σ = ${sum}; pierwsza = ${total}·${a}/${sum}; druga = ${total}·${b}/${sum}`),
-        solution: buildSolution(`total = ${total}; stosunek ${a}:${b}`, "obie części", "część_i = total · ratio_i / Σratio", null,
-          `Σ = ${sum}.  pierwsza = ${total}·${a}/${sum} = ${fmt(r.first)}.  druga = ${total}·${b}/${sum} = ${fmt(r.second)}`,
-          `${fmt(r.first)} i ${fmt(r.second)}`,
-          `${fmt(r.first)} i ${fmt(r.second)}`)
+        hint: hint(
+          `Stosunek ${a}:${b} znaczy razem ${a+b} części. Znajdź ile to 1 część, potem pomnóż.`,
+          [`Razem: ${a} + ${b} = ${sum} części`, `1 część: ${total} ÷ ${sum} = ${fmt(part)}`, `Pierwsza: ${a} · ${fmt(part)}. Druga: ${b} · ${fmt(part)}.`]
+        ),
+        solution: sol(
+          `${total} podzielone w stosunku ${a}:${b}`,
+          `obie części`,
+          [`Razem: ${a} + ${b} = ${sum} części`, `1 część: ${total} ÷ ${sum} = ${fmt(part)}`, `Pierwsza: ${a} · ${fmt(part)} = ${fmt(r.first)}. Druga: ${b} · ${fmt(part)} = ${fmt(r.second)}.`],
+          `${fmt(r.first)} i ${fmt(r.second)}`
+        )
       };
     }
     if (t === 2) {
-      // Druga część stosunku 2 części z znaną pierwszą
       const a = pick([2, 3, 4, 5]); const b = pick([3, 4, 5, 7, 9]);
-      if (a === b) { return ratioGen(); } // unikamy 2:2
+      if (a === b) return ratioGen();
       const knownPart = a < b ? a : b; const otherPart = a < b ? b : a;
       const knownVal = pick([12, 15, 18, 24, 30]);
       const otherVal = M.ratioOtherPart(knownVal, knownPart, otherPart);
+      const onePart = knownVal / knownPart;
       return {
         id: `rg2-${knownVal}-${a}-${b}`,
-        prompt: `Pewien ciężar podzielono w stosunku ${a}:${b}. Lżejsza część waży ${knownVal} kg. Ile waży druga część?`,
+        prompt: `Ciężar podzielono w stosunku ${a}:${b}. Lżejsza część waży ${knownVal} kg. Ile waży druga?`,
         fields: [{ label: "druga", unit: "kg", value: otherVal, tol: 0.05 }],
-        hint: buildHint(`stosunek ${a}:${b}, lżejsza = ${knownVal} kg`, "cięższa", "wagi proporcjonalne", `druga = lżejsza · ${otherPart}/${knownPart} = ${knownVal} · ${otherPart}/${knownPart}`),
-        solution: buildSolution(`stosunek ${a}:${b}; lżejsza = ${knownVal} kg`, "cięższa część", "wagi są proporcjonalne", "druga = lżejsza · większa_część_stosunku / mniejsza_część_stosunku",
-          `${knownVal} · ${otherPart}/${knownPart}`, `= ${fmt(otherVal)}`, `${fmt(otherVal)} kg`)
+        hint: hint(
+          `Lżejsza ma ${knownPart} części stosunku = ${knownVal} kg. Znajdź ile to 1 część, potem pomnóż przez ${otherPart} (cięższa).`,
+          [`1 część: ${knownVal} ÷ ${knownPart} = ${fmt(onePart)} kg`, `Cięższa (${otherPart} części): ${otherPart} · ${fmt(onePart)} = ${fmt(otherVal)} kg`]
+        ),
+        solution: sol(
+          `stosunek ${a}:${b}; lżejsza = ${knownVal} kg`,
+          `cięższa`,
+          [`Lżejsza ma ${knownPart} części = ${knownVal} kg, więc 1 część = ${knownVal} ÷ ${knownPart} = ${fmt(onePart)} kg`, `Cięższa (${otherPart} części): ${otherPart} · ${fmt(onePart)} = ${fmt(otherVal)} kg`],
+          `${fmt(otherVal)} kg`
+        )
       };
     }
     if (t === 3) {
-      // Roztwór: ile soli do W kg wody dla p%
-      const water = pick([18, 20, 30, 50, 90, 100]); const p = pick([5, 10, 20, 25]);
+      const water = pick([18, 27, 36, 45, 50, 90]); const p = pick([10, 20, 25]);
       const salt = M.saltForSolution(water, p);
       return {
         id: `rg3-${water}-${p}`,
         prompt: `Ile soli trzeba dodać do ${water} kg wody, aby otrzymać roztwór ${p}-procentowy?`,
         fields: [{ label: "sól", unit: "kg", value: salt, tol: 0.05 }],
-        hint: buildHint(`woda = ${water} kg; p = ${p}%`, "masa soli", "p/100 = s/(s+woda)", `s = p·woda/(100−p) = ${p}·${water}/${100-p}`),
-        solution: buildSolution(`woda = ${water} kg; p = ${p}%`, "masa soli", "p/100 = s / (s + woda)", "s = p · woda / (100 − p)",
-          `s = ${p} · ${water} / (100 − ${p}) = ${p*water}/${100-p}`, `= ${fmt(salt)}`, `${fmt(salt)} kg`)
+        hint: hint(
+          `${p}% roztwór = sól stanowi ${p}% całości. Czyli sól:woda = ${p}:${100-p}.`,
+          [`Proporcja sól:woda = ${p}:${100-p}`, `Skoro wody jest ${water} kg, to soli będzie ${water} ÷ ${100-p} · ${p}`]
+        ),
+        solution: sol(
+          `woda = ${water} kg; p = ${p}%`,
+          `masa soli`,
+          [`${p}% roztwór: na ${100-p} kg wody przypada ${p} kg soli (proporcja ${p}:${100-p})`, `Soli: (${water}/${100-p}) · ${p} = ${fmt(salt)} kg`],
+          `${fmt(salt)} kg`
+        )
       };
     }
-    // t == 4: Mieszanina X kg roztworu p% — ile składnika i wody
-    const total = pick([1, 2, 5, 10, 20]); const p = pick([5, 10, 15, 20, 25, 50]);
+    const total = pick([5, 10, 20]); const p = pick([5, 10, 15, 20, 25]);
     const comp = M.solutionComponents(total, p);
     return {
       id: `rg4-${total}-${p}`,
-      prompt: `Trzeba przygotować ${total} kg roztworu ${p}-procentowego. Ile potrzeba składnika (cukru/soli) i ile wody?`,
+      prompt: `Trzeba przygotować ${total} kg roztworu ${p}-procentowego. Ile potrzeba składnika i ile wody?`,
       fields: [
         { label: "składnik", unit: "kg", value: comp.salt, tol: 0.05 },
         { label: "woda",     unit: "kg", value: comp.water, tol: 0.05 }
       ],
-      hint: buildHint(`razem = ${total} kg; p = ${p}%`, "składnik i woda", "składnik = (p/100)·total;  woda = total − składnik", `składnik = ${p/100}·${total}`),
-      solution: buildSolution(`razem = ${total} kg; p = ${p}%`, "składnik i woda", "składnik = (p/100)·total;  woda = total − składnik", null,
-        `składnik = ${p}/100 · ${total} = ${fmt(comp.salt)};  woda = ${total} − ${fmt(comp.salt)} = ${fmt(comp.water)}`,
-        `${fmt(comp.salt)} i ${fmt(comp.water)}`,
-        `${fmt(comp.salt)} kg składnika i ${fmt(comp.water)} kg wody`)
+      hint: hint(
+        `Cały roztwór = ${total} kg, składnik = ${p}% całości. Reszta to woda.`,
+        [`Policz ${p}% z ${total}: ${p/100} · ${total} = ? (składnik)`, `Woda = ${total} − składnik`]
+      ),
+      solution: sol(
+        `razem = ${total} kg; p = ${p}% składnika`,
+        `składnik i woda`,
+        [`${p}% z ${total} kg: ${p/100} · ${total} = ${fmt(comp.salt)} kg (składnik)`, `Woda: ${total} − ${fmt(comp.salt)} = ${fmt(comp.water)} kg`],
+        `${fmt(comp.salt)} kg składnika i ${fmt(comp.water)} kg wody`
+      )
     };
   }
 
@@ -929,161 +1098,185 @@
   const probabilityStatic = [
     {
       id: "pr1",
-      prompt: "Wojtek rzuca kostką do gry. Numerujemy poniedziałek=1 do sobota=6. Oblicz prawdopodobieństwo, że dniem sprzątania NIE BĘDZIE środa (3). Podaj wynik jako ułamek a/b.",
+      prompt: "Wojtek rzuca kostką (dni: pon=1...sob=6). Jakie jest prawdopodobieństwo, że NIE wypadnie środa (3)? Podaj ułamek.",
       fields: [{ label: "P", unit: "", value: 5/6, tol: 0.01 }],
-      hint: buildHint(
-        "Kostka 6 ścian (1-6). Środa = 3 (jedna)",
-        "P(nie środa)",
-        "P = #korzystne / #wszystkie",
-        "korzystne = 5 (wszystkie oprócz 3); wszystkie = 6"
+      hint: hint(
+        "Prawdopodobieństwo = liczba KORZYSTNYCH wyników podzielona przez liczbę WSZYSTKICH wyników. Kostka ma 6 ścian (1-6). Środa to 3 — jedna ściana. Wszystkie INNE = 5 ścian.",
+        [
+          "Wszystkie wyniki: 6 (ścianki kostki).",
+          "Korzystne (nie środa): 5 (czyli 1, 2, 4, 5, 6).",
+          "P = 5/6"
+        ]
       ),
-      solution: buildSolution(
-        "kostka 6 ścian; środa = 3",
+      solution: sol(
+        "kostka, środa = 3",
         "P(nie środa)",
-        "P = #korzystne / #wszystkie",
-        null,
-        "korzystne = {1,2,4,5,6} = 5;  wszystkie = 6",
-        "P = 5/6",
+        [
+          "Wszystkich wyników: 6",
+          "Korzystnych (nie środa, czyli {1,2,4,5,6}): 5",
+          "P = 5/6"
+        ],
         "5/6 ≈ 0,833"
       )
     },
     {
       id: "pr2",
-      prompt: "Jakie jest prawdopodobieństwo wyrzucenia szóstki (sobota = 6) na zwykłej kostce do gry?",
+      prompt: "Rzucamy kostką do gry. Jakie jest prawdopodobieństwo wyrzucenia szóstki? Podaj ułamek.",
       fields: [{ label: "P", unit: "", value: 1/6, tol: 0.01 }],
-      hint: buildHint(
-        "kostka 6-ścienna",
-        "P(6)",
-        "P = #korzystne / #wszystkie",
-        "korzystne = 1 (tylko jedna szóstka); wszystkie = 6"
+      hint: hint(
+        "Każda ścianka kostki jest równie prawdopodobna. Szóstka to 1 z 6 ścian.",
+        [
+          "Wszystkie wyniki: 6.",
+          "Korzystne (tylko szóstka): 1.",
+          "P = 1/6"
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "kostka 6 ścian",
         "P(6)",
-        "P = #korzystne / #wszystkie",
-        null,
-        "korzystne = {6} = 1;  wszystkie = 6",
-        "P = 1/6",
+        [
+          "Wszystkich wyników: 6",
+          "Korzystnych (tylko 6): 1",
+          "P = 1/6"
+        ],
         "1/6 ≈ 0,167"
       )
     },
     {
       id: "pr3",
-      prompt: "Jakie jest prawdopodobieństwo, że dzień sprzątania (kostka, dni 1-6) wypadnie NIE PÓŹNIEJ NIŻ W PIĄTEK (czyli 1-5)?",
+      prompt: "Rzucamy kostką. Jakie jest prawdopodobieństwo, że wypadnie liczba NIE WIĘKSZA niż 5? Podaj ułamek.",
       fields: [{ label: "P", unit: "", value: 5/6, tol: 0.01 }],
-      hint: buildHint(
-        "kostka 6 scian, dni: pon=1...sob=6. Nie pozniej niz w piatek znaczy 1,2,3,4,5",
-        "P(1 do 5)",
-        "P = #korzystne / #wszystkie",
-        "korzystne = 5; wszystkie = 6"
+      hint: hint(
+        "'Nie większa niż 5' znaczy 1, 2, 3, 4 lub 5. To 5 liczb. Wszystkich liczb na kostce: 6.",
+        [
+          "Korzystne wyniki: 1, 2, 3, 4, 5 — czyli 5 wyników.",
+          "Wszystkich wyników: 6.",
+          "P = 5/6"
+        ]
       ),
-      solution: buildSolution(
-        "kostka 6 ścian; nie później niż w piątek = {1,2,3,4,5}",
+      solution: sol(
+        "kostka; nie większa niż 5 = {1,2,3,4,5}",
         "P(≤5)",
-        "P = #korzystne / #wszystkie",
-        null,
-        "korzystne = 5;  wszystkie = 6",
-        "P = 5/6",
+        [
+          "Korzystne: 5 wyników (1, 2, 3, 4, 5)",
+          "Wszystkich: 6",
+          "P = 5/6"
+        ],
         "5/6 ≈ 0,833"
       )
     },
     {
       id: "pr4",
-      prompt: "W pojemniku jest 1 biała kula, 2 czerwone i 6 czarnych (czarnych jest 3 razy więcej niż czerwonych, a czerwonych 2 razy więcej niż białych). Jakie jest prawdopodobieństwo, że wylosowana kula NIE BĘDZIE CZERWONA?",
+      prompt: "W pojemniku jest 1 biała kula, 2 czerwone i 6 czarnych. Jakie jest prawdopodobieństwo, że wylosowana kula NIE BĘDZIE CZERWONA?",
       fields: [{ label: "P", unit: "", value: 7/9, tol: 0.01 }],
-      hint: buildHint(
-        "razem = 1 + 2 + 6 = 9 kul; nie czerwone = białe + czarne = 1 + 6 = 7",
-        "P(nie czerwona)",
-        "P = #korzystne / #wszystkie",
-        "P = 7/9"
+      hint: hint(
+        "Razem kul: 1 + 2 + 6 = 9. 'Nie czerwone' to białe + czarne = 1 + 6 = 7.",
+        [
+          "Razem kul: 1 + 2 + 6 = 9.",
+          "'Nie czerwone (białe + czarne): 1 + 6 = 7.",
+          "P = 7/9"
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "1 biała, 2 czerwone, 6 czarnych — razem 9 kul",
         "P(nie czerwona)",
-        "P = #korzystne / #wszystkie",
-        null,
-        "nie czerwone = 1 + 6 = 7;  wszystkich = 9",
-        "P = 7/9",
+        [
+          "Razem: 1 + 2 + 6 = 9 kul",
+          "'Nie czerwone: 1 + 6 = 7 kul",
+          "P = 7/9"
+        ],
         "7/9 ≈ 0,778"
       )
     },
     {
       id: "pr5",
-      prompt: "Kasia rzuca kostką. Zdarzenie A: wypadną więcej niż 2 oczka. Zdarzenie B: wypadnie mniej niż 5 oczek. Oblicz P(A) + P(B). Podaj jako ułamek.",
+      prompt: "Kasia rzuca kostką. A: wypadnie więcej niż 2 oczka. B: wypadnie mniej niż 5 oczek. Oblicz P(A) + P(B). Podaj ułamek.",
       fields: [{ label: "P(A)+P(B)", unit: "", value: 4/3, tol: 0.01 }],
-      hint: buildHint(
-        "Kostka 6-ścienna. A: {3,4,5,6} (więcej niż 2). B: {1,2,3,4} (mniej niż 5)",
-        "P(A) + P(B)",
-        "P = #korzystne / 6 dla każdego, potem dodajemy",
-        "P(A) = 4/6, P(B) = 4/6, suma = 8/6 = 4/3"
+      hint: hint(
+        "Najpierw wymień co należy do A i B, potem policz prawdopodobieństwo każdego, na końcu dodaj.",
+        [
+          "A: więcej niż 2 = {3, 4, 5, 6} — 4 wyniki. P(A) = 4/6.",
+          "B: mniej niż 5 = {1, 2, 3, 4} — 4 wyniki. P(B) = 4/6.",
+          "Suma: 4/6 + 4/6 = 8/6 = 4/3."
+        ]
       ),
-      solution: buildSolution(
-        "kostka; A: >2 oczka = {3,4,5,6}; B: <5 oczek = {1,2,3,4}",
+      solution: sol(
+        "kostka; A: >2 = {3,4,5,6}; B: <5 = {1,2,3,4}",
         "P(A) + P(B)",
-        "P = #korzystne / 6",
-        null,
-        "P(A) = 4/6 = 2/3;  P(B) = 4/6 = 2/3;  suma = 4/3",
-        "= 4/3 ≈ 1,33 (większa niż 1!)",
-        "4/3 ≈ 1,33"
+        [
+          "P(A) = 4/6 = 2/3",
+          "P(B) = 4/6 = 2/3",
+          "P(A) + P(B) = 2/3 + 2/3 = 4/3"
+        ],
+        "4/3 ≈ 1,33 (większe niż 1 — bo zdarzenia mają wspólne wyniki)"
       )
     },
     {
       id: "pr6",
-      prompt: "W klasach 8a, 8b, 8c jest odpowiednio: 8a → 25 osób (12 dziewcząt, 13 chłopców), 8b → 32 osoby (15 dziewcząt, 17 chłopców), 8c → 30 osób (18 dziewcząt, 12 chłopców). Łącznie 87 osób. Jakie jest prawdopodobieństwo wylosowania osoby z klasy 8c? Podaj ułamek.",
+      prompt: "W trzech klasach 8a, 8b, 8c jest łącznie 87 osób (8c ma 30 osób). Jakie jest prawdopodobieństwo wylosowania osoby z klasy 8c? Podaj ułamek.",
       fields: [{ label: "P", unit: "", value: 30/87, tol: 0.01 }],
-      hint: buildHint(
-        "razem 87 osób; klasa 8c = 30 osób",
-        "P(8c)",
-        "P = #korzystne / #wszystkie = 30/87",
-        "Można skrócić: 30/87 = 10/29"
+      hint: hint(
+        "Wszystkich osób: 87. Korzystne (z 8c): 30. Podziel i można skrócić ułamek.",
+        [
+          "Wszystkich: 87.",
+          "Korzystne (8c): 30.",
+          "P = 30/87 = 10/29 (po skróceniu przez 3)."
+        ]
       ),
-      solution: buildSolution(
-        "razem 87 osób; 8c = 30 osób",
+      solution: sol(
+        "razem 87 osób; 8c = 30",
         "P(8c)",
-        "P = #korzystne / #wszystkie",
-        "Skracamy ułamek",
-        "P = 30/87 = 10/29",
-        "≈ 0,345",
+        [
+          "Wszystkich: 87, korzystnych (8c): 30",
+          "P = 30/87",
+          "Skracam (dzielę przez 3): P = 10/29"
+        ],
         "30/87 = 10/29 ≈ 0,345"
       )
     },
     {
       id: "pr7",
-      prompt: "Na festynie jest 120 pączków. W 3 ukryto czerwony guzik (bilet na koncert), w 5 niebieski (bilet do parku wodnego). Jakie jest prawdopodobieństwo, że pierwsza osoba kupi pączek z JAKĄKOLWIEK nagrodą?",
+      prompt: "Na festynie jest 120 pączków. W 3 ukryto czerwony guzik, w 5 niebieski (oba dają nagrodę). Jakie jest prawdopodobieństwo, że pierwszy kupiony pączek będzie miał JAKĄKOLWIEK nagrodę?",
       fields: [{ label: "P", unit: "", value: 8/120, tol: 0.005 }],
-      hint: buildHint(
-        "wszystkich pączków = 120, z nagrodą = 3 + 5 = 8",
-        "P(jakakolwiek nagroda)",
-        "P = #z nagrodą / #wszystkich",
-        "P = 8/120 — można skrócić do 1/15"
+      hint: hint(
+        "Pączków z nagrodą: 3 + 5 = 8. Razem pączków: 120.",
+        [
+          "Wszystkich pączków: 120.",
+          "Korzystne (z nagrodą): 3 + 5 = 8.",
+          "P = 8/120 = 1/15"
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "120 pączków; z nagrodą: 3 czerwone + 5 niebieskich = 8",
         "P(nagroda)",
-        "P = #korzystne / #wszystkie",
-        "Skracamy",
-        "P = 8/120 = 1/15",
-        "≈ 0,067",
+        [
+          "Wszystkich: 120, korzystnych: 8",
+          "P = 8/120",
+          "Skracam (przez 8): P = 1/15"
+        ],
         "8/120 = 1/15 ≈ 0,067"
       )
     },
     {
       id: "pr8",
-      prompt: "Z urny z 5 kulami białymi, 3 czarnymi i 2 czerwonymi losujemy jedną kulę. Jakie jest prawdopodobieństwo, że wylosujemy kulę NIE BIAŁĄ?",
+      prompt: "Z urny z 5 białymi, 3 czarnymi i 2 czerwonymi kulami losujemy jedną. Jakie jest prawdopodobieństwo wylosowania kuli NIE BIAŁEJ?",
       fields: [{ label: "P", unit: "", value: 5/10, tol: 0.01 }],
-      hint: buildHint(
-        "razem = 5 + 3 + 2 = 10; nie białe = 3 + 2 = 5",
-        "P(nie biała)",
-        "P = #korzystne / #wszystkie",
-        "P = 5/10 = 1/2"
+      hint: hint(
+        "Razem kul: 5+3+2 = 10. Nie białe to czarne + czerwone = 3+2 = 5.",
+        [
+          "Razem: 5 + 3 + 2 = 10 kul.",
+          "'Nie białe: 3 + 2 = 5.",
+          "P = 5/10 = 1/2."
+        ]
       ),
-      solution: buildSolution(
+      solution: sol(
         "5 białych, 3 czarne, 2 czerwone — razem 10",
         "P(nie biała)",
-        "P = #korzystne / #wszystkie",
-        null,
-        "nie białe = 3 + 2 = 5;  wszystkich = 10",
-        "P = 5/10 = 1/2",
+        [
+          "Razem: 10 kul",
+          "'Nie białe: 3 + 2 = 5",
+          "P = 5/10 = 1/2"
+        ],
         "1/2 = 0,5"
       )
     }
@@ -1092,42 +1285,33 @@
   function probabilityGen() {
     const t = rand(1, 3);
     if (t === 1) {
-      // Kostka — wybór dnia (dni 1-6)
-      const dni = ["pon","wt","śr","czw","pt","sob"];
-      const idx = rand(0, 5); const day = dni[idx];
-      const kind = pick(["specific", "not", "leq"]);
+      const dni = ["poniedziałek","wtorek","środę","czwartek","piątek","sobotę"];
+      const idx = rand(0, 5);
+      const kind = pick(["specific", "not"]);
       if (kind === "specific") {
         return {
-          id: `prg1-spec-${day}`,
-          prompt: `Rzucamy kostką (dni: pon=1, wt=2, śr=3, czw=4, pt=5, sob=6). Jakie jest prawdopodobieństwo wylosowania ${day === "pon" ? "poniedziałku" : day === "wt" ? "wtorku" : day === "śr" ? "środy" : day === "czw" ? "czwartku" : day === "pt" ? "piątku" : "soboty"} (${idx+1})?`,
+          id: `prg1-spec-${idx}`,
+          prompt: `Rzucamy kostką (dni: pon=1, wt=2, śr=3, czw=4, pt=5, sob=6). Jakie jest prawdopodobieństwo wylosowania ${dni[idx]} (${idx+1})?`,
           fields: [{ label: "P", unit: "", value: 1/6, tol: 0.01 }],
-          hint: buildHint("kostka 6-ścienna; szukany dzień ma 1 oczko z 6", "P", "P = 1/6", "Kazdy konkretny dzien ma takie samo prawdopodobienstwo"),
-          solution: buildSolution("kostka; szukany dzień", "P", "P = #korzystne / #wszystkie", null,
-            `korzystne = 1, wszystkie = 6`, `P = 1/6`, `1/6 ≈ 0,167`)
-        };
-      } else if (kind === "not") {
-        return {
-          id: `prg1-not-${day}`,
-          prompt: `Rzucamy kostką. Jakie jest prawdopodobieństwo, że dniem NIE BĘDZIE ${day === "pon" ? "poniedziałek" : day === "wt" ? "wtorek" : day === "śr" ? "środa" : day === "czw" ? "czwartek" : day === "pt" ? "piątek" : "sobota"} (${idx+1})?`,
-          fields: [{ label: "P", unit: "", value: 5/6, tol: 0.01 }],
-          hint: buildHint("kostka 6-ścienna; wykluczamy 1 dzień", "P", "P = (6−1)/6 = 5/6", "Albo: P(nie X) = 1 − P(X) = 1 − 1/6 = 5/6"),
-          solution: buildSolution("kostka; wykluczamy 1 dzień", "P", "P = #korzystne / #wszystkie", null,
-            "korzystne = 5, wszystkie = 6", "P = 5/6", "5/6 ≈ 0,833")
-        };
-      } else {
-        const limit = rand(2, 5); // do limit włącznie
-        return {
-          id: `prg1-leq-${limit}`,
-          prompt: `Rzucamy kostką. Jakie jest prawdopodobieństwo wyrzucenia liczby NIE WIĘKSZEJ NIŻ ${limit}?`,
-          fields: [{ label: "P", unit: "", value: limit/6, tol: 0.01 }],
-          hint: buildHint(`kostka; korzystne = {1, 2, ..., ${limit}}`, `P(≤${limit})`, "P = #korzystne / #wszystkie", `P = ${limit}/6`),
-          solution: buildSolution(`kostka; ≤${limit}`, "P", "P = #korzystne / #wszystkie", null,
-            `korzystne = ${limit}, wszystkie = 6`, `P = ${limit}/6`, `${limit}/6 ≈ ${(limit/6).toFixed(3).replace(".",",")}`)
+          hint: hint(
+            "Każdy dzień ma takie samo prawdopodobieństwo — to 1 z 6 ścianek kostki.",
+            ["Wszystkich wyników: 6.", "Korzystnych (szukany dzień): 1.", "P = 1/6"]
+          ),
+          solution: sol(`kostka; szukany dzień: ${dni[idx]} (${idx+1})`, "P", ["Wszystkich: 6, korzystnych: 1", "P = 1/6"], "1/6 ≈ 0,167")
         };
       }
+      return {
+        id: `prg1-not-${idx}`,
+        prompt: `Rzucamy kostką. Jakie jest prawdopodobieństwo, że dniem NIE BĘDZIE ${dni[idx]} (${idx+1})?`,
+        fields: [{ label: "P", unit: "", value: 5/6, tol: 0.01 }],
+        hint: hint(
+          "Wykluczamy 1 dzień z 6 — zostaje 5 wyników korzystnych.",
+          ["Wszystkich wyników: 6.", "Korzystnych (nie ten dzień): 6 − 1 = 5.", "P = 5/6"]
+        ),
+        solution: sol(`kostka; wykluczamy ${dni[idx]}`, "P", ["Wszystkich: 6, korzystnych: 5", "P = 5/6"], "5/6 ≈ 0,833")
+      };
     }
     if (t === 2) {
-      // Urna z kulami w kolorach
       const a = rand(2, 7); const b = rand(2, 7); const c = rand(2, 7);
       const total = a + b + c;
       const wybor = rand(1, 3);
@@ -1138,12 +1322,13 @@
         id: `prg2-${a}-${b}-${c}-${wybor}`,
         prompt: `W urnie jest ${a} białych, ${b} czerwonych i ${c} zielonych kul. Jakie jest prawdopodobieństwo wylosowania kuli ${labels[wybor-1]}?`,
         fields: [{ label: "P", unit: "", value: fav/total, tol: 0.01 }],
-        hint: buildHint(`razem = ${a}+${b}+${c} = ${total}; korzystne = ${fav}`, "P", "P = #korzystne / #wszystkie", `P = ${fav}/${total}`),
-        solution: buildSolution(`białe ${a}, czerwone ${b}, zielone ${c}; razem ${total}`, "P", "P = #korzystne / #wszystkie", null,
-          `P = ${fav}/${total}`, `≈ ${(fav/total).toFixed(3).replace(".",",")}`, `${fav}/${total}`)
+        hint: hint(
+          `Wszystkich kul: ${a}+${b}+${c} = ${total}. Korzystne (${labels[wybor-1]} kule): ${fav}.`,
+          [`Razem: ${a} + ${b} + ${c} = ${total}.`, `Korzystne: ${fav}.`, `P = ${fav}/${total}`]
+        ),
+        solution: sol(`${a} białych, ${b} czerwonych, ${c} zielonych; razem ${total}`, "P", [`Razem: ${total}, korzystnych: ${fav}`, `P = ${fav}/${total}`], `${fav}/${total} ≈ ${(fav/total).toFixed(3).replace(".",",")}`)
       };
     }
-    // t == 3: NIE konkretny kolor
     const a = rand(2, 7); const b = rand(2, 7); const c = rand(2, 7);
     const total = a + b + c;
     const wybor = rand(1, 3);
@@ -1154,13 +1339,14 @@
       id: `prg3-${a}-${b}-${c}-${wybor}`,
       prompt: `W urnie jest ${a} białych, ${b} czerwonych i ${c} zielonych kul. Jakie jest prawdopodobieństwo wylosowania kuli NIE ${labels[wybor-1]}?`,
       fields: [{ label: "P", unit: "", value: fav/total, tol: 0.01 }],
-      hint: buildHint(`razem = ${total}; nie ${labels[wybor-1]} = ${fav}`, "P", "P = #korzystne / #wszystkie", `P = ${fav}/${total}`),
-      solution: buildSolution(`razem = ${total}; nie ${labels[wybor-1]} = ${fav}`, "P", "P = #korzystne / #wszystkie", null,
-        `P = ${fav}/${total}`, `≈ ${(fav/total).toFixed(3).replace(".",",")}`, `${fav}/${total}`)
+      hint: hint(
+        `Razem: ${total} kul. 'Nie ${labels[wybor-1]}' to wszystkie KROTNE niż ten kolor = ${fav}.`,
+        [`Razem: ${total}.`, `Nie ${labels[wybor-1]}: ${total} − ${counts[wybor-1]} = ${fav}.`, `P = ${fav}/${total}`]
+      ),
+      solution: sol(`${a} białych, ${b} czerwonych, ${c} zielonych; razem ${total}`, "P", [`Razem: ${total}`, `Nie ${labels[wybor-1]}: ${fav}`, `P = ${fav}/${total}`], `${fav}/${total} ≈ ${(fav/total).toFixed(3).replace(".",",")}`)
     };
   }
 
-  // ============= EKSPORT =============
   global.MathProblems = {
     percentStatic, percentGen,
     financeStatic, financeGen,
@@ -1179,7 +1365,7 @@
       if (category === "math-finance") return financeGen();
       if (category === "math-ratio") return ratioGen();
       if (category === "math-probability") return probabilityGen();
-      throw new Error("Nieznana kategoria matematyki: " + category);
+      throw new Error("Nieznana kategoria: " + category);
     }
   };
 })(typeof window !== "undefined" ? window : globalThis);
