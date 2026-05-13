@@ -169,7 +169,8 @@ const HEARTBEAT_INSERT = db.prepare("INSERT INTO heartbeats (user_id, ts) VALUES
 app.post("/api/attempt", requireAuth, (req, res) => {
   const { category, taskId, ok, timeSpentMs } = req.body || {};
   if (!category || !taskId || ok === undefined) return res.status(400).json({ error: "Brak danych" });
-  if (!["basic", "rz", "mixed"].includes(category)) return res.status(400).json({ error: "Zła kategoria" });
+  const ALLOWED_CATS = ["basic", "rz", "mixed", "math-percent", "math-finance", "math-ratio", "math-probability"];
+  if (!ALLOWED_CATS.includes(category)) return res.status(400).json({ error: "Zła kategoria" });
   ATTEMPT_INSERT.run(
     req.session.userId,
     Date.now(),

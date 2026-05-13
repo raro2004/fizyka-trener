@@ -6,15 +6,18 @@
 
   const STORAGE_KEY = "fizyka-trener-state-v1";
 
+  const KNOWN_CATEGORIES = [
+    "basic", "rz", "mixed",
+    "math-percent", "math-finance", "math-ratio", "math-probability"
+  ];
+
   // Domyślny stan użytkownika
   function defaultState() {
+    const cats = {};
+    KNOWN_CATEGORIES.forEach(c => cats[c] = catState());
     return {
       name: "",
-      categories: {
-        basic: catState(),
-        rz: catState(),
-        mixed: catState()
-      },
+      categories: cats,
       log: []  // {ts, cat, taskId, ok}
     };
   }
@@ -36,9 +39,9 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaultState();
       const s = JSON.parse(raw);
+      if (!s.categories) s.categories = {};
       // upewnij się że mamy wszystkie klucze
-      const def = defaultState();
-      Object.keys(def.categories).forEach(k => {
+      KNOWN_CATEGORIES.forEach(k => {
         if (!s.categories[k]) s.categories[k] = catState();
         Object.keys(catState()).forEach(kk => {
           if (s.categories[k][kk] === undefined) s.categories[k][kk] = catState()[kk];
@@ -48,6 +51,12 @@
     } catch(e) {
       return defaultState();
     }
+  }
+
+  // Lazy ensure - dodaj kategorię jeśli nie istnieje
+  function ensureCategory(name, state) {
+    if (!state.categories[name]) state.categories[name] = catState();
+    return state.categories[name];
   }
   function save(state) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
@@ -62,7 +71,7 @@
   //  - Potem nieujęte statyczne zadania (po kolei)
   //  - Potem nowe wygenerowane
   function pickNext(category, allStatic, generator, state) {
-    const cat = state.categories[category];
+    const cat = ensureCategory(category, state);
     const total = cat.total;
 
     // 1. Sprawdź kolejkę powtórek — czy któreś jest "gotowe" (dueAfterTotal <= total)
@@ -90,7 +99,7 @@
 
   // Zarejestruj wynik
   function record(category, task, ok, state) {
-    const cat = state.categories[category];
+    const cat = ensureCategory(category, state);
     cat.total += 1;
     if (ok) {
       cat.correct += 1;
