@@ -122,5 +122,13 @@
     state.name = name; save(state);
   }
 
-  global.SRS = { load, save, reset, pickNext, record, setName, defaultState };
+  // Pomiń: oznacz zadanie jako widziane (nie pojawia się w "nowe"), ale NIE wpływa na statystyki
+  function skip(category, task, state) {
+    const cat = ensureCategory(category, state);
+    // ustaw 1 w seenStatic, żeby pickNext nie wybierał ponownie
+    cat.seenStatic[task.id] = Math.max(1, cat.seenStatic[task.id] || 0);
+    save(state);
+  }
+
+  global.SRS = { load, save, reset, pickNext, record, skip, setName, defaultState };
 })(typeof window !== "undefined" ? window : globalThis);

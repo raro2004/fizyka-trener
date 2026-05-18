@@ -296,7 +296,8 @@
     document.querySelector(".check-btn").addEventListener("click", checkAnswer);
     document.querySelector(".hint-btn").addEventListener("click", showHint);
     document.querySelector(".skip-btn").addEventListener("click", () => {
-      // Pomiń: NIE liczymy ani jako poprawne, ani jako błąd. Streak nienaruszony.
+      // Pomiń: oznacz jako widziane (żeby nie wracało) ale BEZ liczenia w statystykach
+      SRS.skip(currentCategory, currentTask, state);
       nextTask();
     });
     const firstInput = document.querySelector("input[data-idx='0']");
