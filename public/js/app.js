@@ -286,6 +286,7 @@
           <div class="task-actions">
             <button class="btn primary check-btn">Sprawdź odpowiedź</button>
             <button class="btn ghost hint-btn">💡 Podpowiedź (wzór)</button>
+            <button class="btn ghost skip-btn" title="Przeskocz bez odpowiedzi — streak nie zostanie wyzerowany">⏭️ Pomiń</button>
           </div>
           <div class="feedback" id="feedback"></div>
         </div>
@@ -294,6 +295,10 @@
     document.querySelector(".back-btn").addEventListener("click", () => renderCategoryPicker());
     document.querySelector(".check-btn").addEventListener("click", checkAnswer);
     document.querySelector(".hint-btn").addEventListener("click", showHint);
+    document.querySelector(".skip-btn").addEventListener("click", () => {
+      // Pomiń: NIE liczymy ani jako poprawne, ani jako błąd. Streak nienaruszony.
+      nextTask();
+    });
     const firstInput = document.querySelector("input[data-idx='0']");
     if (firstInput) firstInput.focus();
     document.querySelectorAll("input").forEach((el, i, all) => {
